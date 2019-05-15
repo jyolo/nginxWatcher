@@ -1,5 +1,5 @@
 import os,sys,time,traceback,re,signal
-from redis import Redis as RedisClient
+from redis import Redis as RedisClient,exceptions as redisExceptions
 from multiprocessing import Pool,Pipe,Manager
 
 # 处理ctrl+c 进程的退出
@@ -16,6 +16,13 @@ def logPid(readType = 'w+'):
         f.write(' %s' % os.getpid())
         
     f.close()
+
+#将10位时间戳转换为时间字符串，默认为2017-10-01 13:37:04格式 
+def timestamp_to_date(format_string="%Y-%m-%d %H:%M:%S" ,time_stamp = time.time() ): 
+    time_array = time.localtime(time_stamp) 
+    str_date = time.strftime(format_string, time_array) 
+    return str_date
+
 
 class LogWather(object):
 
@@ -38,8 +45,11 @@ class LogWather(object):
 
         logPid()
 
+        nowDate = timestamp_to_date("%Y_%m_%d")
+        
         # redis key 的前缀
-        self.keyPrefix = filePath.split('/').pop().replace('.','_')
+        self.keyPrefix = nowDate +'_'+ filePath.split('/').pop().replace('.','_')
+        
         
         self.UnNormalRedisKey = '%s_UnNormalIp' % self.keyPrefix # 判定为 非正常请求次数的ip
         self.robotRedisKey = '%s_robotIp' % self.keyPrefix # 爬虫/采集机器人 ip 存放redis key
@@ -51,9 +61,9 @@ class LogWather(object):
 
         self.ignoreRequestType = ['js','css','png' ,'jpg','jpeg','ico','gif','woff'] # 忽略的请求类型
         # 判断阀值
-        self.unnormalRequestTImes= 20  # 判断是否是超频请求的基准次数 在nginx日志中每分钟内超过多少次才判定为超频请求
-        self.overRequestProcent = 0.5 # 满足 超频请求率 判断阀值  [ 每分钟超过阀值的请求次数（每分钟）  / 总的请求次数（每分钟） ]
-        self.unnormalRequestPage = 0.4 # 满足 不合格的相同页面的请求率 判断阀值  [请求不同的页面数量 / 本次超频的总请求数]
+        self.unnormalRequestTImes= 30  # 判断是否是超频请求的基准次数 在nginx日志中每分钟内超过多少次才判定为超频请求
+        self.overRequestProcent = 0.65 # 满足 超频请求率 判断阀值  [ 每分钟超过阀值的请求次数（每分钟）  / 总的请求次数（每分钟） ]
+        self.unnormalRequestPage = 0.2 # 满足 不合格的相同页面的请求率 判断阀值  [请求不同的页面数量 / 本次超频的总请求数]
         self.robotPercent = 0.5 # 满足 机器人几率 判断阀值  [不合格的相同页面的请求率 / 总的超频请求次数 ]
 
     # 获取redis实例          
@@ -69,7 +79,6 @@ class LogWather(object):
             return self.redis
         else:
             return self.redis
-        
         
 
     # 获取统计命令
@@ -101,23 +110,22 @@ class LogWather(object):
 
     # 检测的时间间隔 ,每隔多少秒检测一次   
     def StartWatcher(self ,cmdTtype = 0  ):
-        
         try:
             logPid('a+')
 
             while True:
-                print('---start watcher pid: %s ---at: %s' % (os.getpid(),time.time()))
+                print('---start watcher pid: %s ---at: %s' % (os.getpid(),timestamp_to_date()))
 
                 start_time = time.strftime('%d/%b/%Y:%H:%M:%S',time.localtime(time.time() - self.betweenRequestTime))
                 end_time =  time.strftime('%d/%b/%Y:%H:%M:%S',time.localtime(time.time() ))
                 
-                start_time = start_time.replace('14/','11/')
-                end_time = end_time.replace('14/','11/')
+                stime = start_time.replace('15/','11/')
+                etime = end_time.replace('15/','11/')
 
                 
-                stime = start_time
-                etime = end_time
-                print('------------开始检查 %s - %s 时间区间里请求最高的前十位 IP------------' % ( etime ,start_time))
+                # stime = start_time
+                # etime = end_time
+                print('------------开始检查 %s - %s 时间区间里请求最高的前十位 IP------------' % ( etime ,stime))
                 # stime = time.strftime('[%d/%b/%Y:%H:%M:%S',time.localtime(time.time() - self.betweenRequestTime))
                 # etime = time.strftime('[%d/%b/%Y:%H:%M:%S',time.localtime(time.time() ))
                 # stime = '09/May/2019:10:03:00'
@@ -140,6 +148,9 @@ class LogWather(object):
                     _count = []
                     for i in data:
                         strList = i.strip(' ').split(' ')
+                        ###
+                        # 第一个过滤 每分钟超出 请求阀值的 丢入到 待检测队列中
+                        ###
                         if int(strList[0]) > self.unnormalRequestTImes:
                             print('IP: %s in limit time request total : %s times' % (strList[1] ,strList[0] ) )
                             self.getRedis().lpush(self.UnNormalRedisKey ,strList[1])
@@ -149,12 +160,13 @@ class LogWather(object):
                     print('---between stime %s - etime %s 暂无请求日志  ' % (stime,etime) )
 
 
-                print('---end watcher pid: %s ---at: %s' % (os.getpid(),time.time()))
+                print('---end watcher pid: %s ---at: %s' % (os.getpid(),timestamp_to_date()))
                 time.sleep(self.checkTimeLimit)
                 
 
         except BaseException as e:
             traceback.print_exc()
+            sys.exit()
             
     
     # 过滤掉忽略的静态请求链接
@@ -195,7 +207,7 @@ class LogWather(object):
     def RequestWatcher(self):
         try:
             logPid('a+')
-            print('---start RequestWatcher pid: %s ---at: %s' % (os.getpid(),time.time()) ,end="\n")
+            print('---start RequestWatcher pid: %s ---at: %s' % (os.getpid(),timestamp_to_date()) ,end="\n")
             while True:
                 
                 ip = self.getRedis().lpop(self.UnNormalRedisKey)
@@ -264,20 +276,23 @@ class LogWather(object):
                     print('ip:%s ; 过滤掉静态文件的请求后，不满足超频请求率 单位时间请求次数： %s' % (ip,len(item) ) )
                     continue
 
-                # 一共多少次访问 （每分钟 = 一个单位）
+                # 截至检测的时间 该ip的所有请求 以分钟为单为 分割成 数组
                 total_minute_visited = len(item)  
                 overTime = 0
                 
                 # 一分钟内超过可疑请求频率的集合 （超频请求）
                 highRequestMinute = {}
                 for k in item:
-                    # print(len(item[k]))
+                    ###
+                    # 第二个过滤 在所有分钟请求次数中 过滤出 超出 阀值的 不正常的请求
+                    ###
                     if len(item[k]) >= self.unnormalRequestTImes:
                         overTime = overTime+1
                         highRequestMinute[k] = item[k]
                     
 
                 ###
+                # 第三个过滤 计算出该 ip的 超频请求率
                 # 超频请求率
                 # 第一个算法 [ 每分钟超过阀值的请求次数（每分钟）  / 总的 请求次数（每分钟）] 一个暴力采集的ip能达到 0.75  该值越高 越暴力
                 ###
@@ -337,11 +352,11 @@ class LogWather(object):
                 del item 
                 del _list
         
-            print('---end RequestWatcher pid: %s ---at: %s' % (os.getpid(),time.time()))
+            print('---end RequestWatcher pid: %s ---at: %s' % (os.getpid(),timestamp_to_date()))
 
         except Exception as e:
             traceback.print_exc()
-
+            sys.exit()
 
 
 
@@ -355,22 +370,25 @@ def watch(logPath = '/www/wwwlogs/xfb.log'):
         signal.signal(signal.SIGTERM, _BeKill)
         
         obj = LogWather(logPath)
-        
+
+
         poolNum = 2
         
         p = Pool(poolNum)
+        
         for i in range(poolNum):
             if i == 0 :
                 p.apply_async(obj.StartWatcher)
             else:
                 p.apply_async(obj.RequestWatcher)
-                pass
+
 
         p.close()
         p.join()
         
 
-    except BaseException as e:
+    except Exception as e:
+        print('zzz')
         traceback.print_exc()
         sys.exit()
     
@@ -378,17 +396,18 @@ def watch(logPath = '/www/wwwlogs/xfb.log'):
 if __name__ == "__main__":
     
     
+    
     try:
+        
         action = sys.argv[1]
         if callable(eval(action)) == True:
             if os.path.exists(sys.argv[2]) == False:
                 raise FileNotFoundError()
-            
-           
+
             eval(sys.argv[1])(sys.argv[2])
                 
 
-
+   
     except IndexError as e :
         print('不支持该参数')
     except FileNotFoundError as e:
