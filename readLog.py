@@ -74,11 +74,12 @@ class reader:
         try:
             request_time = _arr[0].strip('').strip('[')
             request_time.replace('[','')
-            request_time.replace("'",'')
-            time_int = time.mktime(time.strptime(int(request_time), "%d/%b/%Y:%H:%M:%S"))
+
+            time_int = time.mktime(time.strptime(request_time, "%d/%b/%Y:%H:%M:%S"))
             time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
         except Exception as e:
             traceback.print_exc()
+            print(request_time)
             print('该行时间不匹配: %s' % line)
             print(_arr)
             return
