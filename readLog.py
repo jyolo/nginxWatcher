@@ -13,29 +13,26 @@ class reader:
         self.logPid()
         self.file_path = logPath;
         self.file = open(logPath)
-        self.db = MongoDb('xfb','xfb_log').db
+        self.db = MongoDb('xfb','xfb_online_log').db
         self.insertData = []
         self.insertData_max_len = 3000
 
-        # self.startTailF()
-        self.startRead()
+        self.startTailF()
+        # self.startRead()
         self.file.close()
 
 
         print('--end time : %s' % time.time())
 
     def startTailF(self):
-        # self.file.seek(0, 2)
+
         with open(self.file_path,'r+') as f:
             # 文件指针定位到文件末尾
             f.seek(0, 2)
             while True:
-                # print(f.tell())
                 line = f.readline()
                 if(line == ''):
                     continue
-
-
                 self.__lineLogToMongo(line)
 
     # 记录当前 工作的 进程id
@@ -56,13 +53,22 @@ class reader:
                 print('read end done')
                 break
 
+
+            print(line)
             self.__lineLogToMongo(line)
 
     def __lineLogToMongo(self ,line):
         _arr = line.split(' ')
         # 过滤掉静态文件
-        if (re.search(r'\.[js|css|png|jpg|ico]',_arr[6].strip('') )):
-            return
+        try:
+            if (re.search(r'\.[js|css|png|jpg|ico]', _arr[6].strip(''))):
+                return
+        except Exception as e:
+            traceback.print_exc()
+            print(line)
+            print(_arr)
+            exit()
+
 
         _map = {}
 
@@ -108,7 +114,7 @@ class reader:
 
             print(mid)
             self.insertData = []
-        # mid = self.db.insert_one(_map)
+
 
 
     def __ipLocation(self,ip):
@@ -126,5 +132,6 @@ class reader:
 
 
 if __name__ == "__main__":
-    logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\xfb.log'
+    # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\xfb.log'
+    logPath = '/alidata/server/nginx/logs/xfb.log'
     reader(logPath)
