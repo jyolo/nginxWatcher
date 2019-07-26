@@ -76,6 +76,7 @@ class reader:
             time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
         except Exception as e:
             print('该行时间不匹配: %s' % line)
+            print(_arr)
             return
 
 
