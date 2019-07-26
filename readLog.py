@@ -106,7 +106,15 @@ class reader:
 
         _map['method'] = _arr[5].strip('').strip('"')
         _map['url'] = _arr[6].strip('')
-        _map['status'] = _arr[8].strip('')
+        try:
+            _map['status'] = _arr[8].strip('')
+        except Exception as e:
+            traceback.print_exc()
+            print('status 匹配错误')
+            print(line)
+            print(_arr)
+            _map['status'] = '0'
+
         _map['content_size'] = _arr[9].strip('')
         try:
             _map['referer'] = _arr[10].strip('').strip('"')
