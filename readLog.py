@@ -65,14 +65,19 @@ class reader:
                 return
         except Exception as e:
             print('该行不匹配: %s' % line)
-            return 
+            return
 
 
         _map = {}
 
-        request_time = _arr[0].strip('[')
-        time_int = time.mktime(time.strptime(request_time, "%d/%b/%Y:%H:%M:%S"))
-        time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
+        try:
+            request_time = _arr[0].strip('[')
+            time_int = time.mktime(time.strptime(int(request_time), "%d/%b/%Y:%H:%M:%S"))
+            time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
+        except Exception as e:
+            print('该行时间不匹配: %s' % line)
+            return
+
 
 
         _map['time_str'] = time_str
