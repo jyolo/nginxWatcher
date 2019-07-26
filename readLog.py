@@ -64,10 +64,8 @@ class reader:
             if (re.search(r'\.[js|css|png|jpg|ico]', _arr[6].strip(''))):
                 return
         except Exception as e:
-            traceback.print_exc()
-            print(line)
-            print(_arr)
-            exit()
+            print('该行不匹配: %s' % line)
+            return 
 
 
         _map = {}
