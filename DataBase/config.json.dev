@@ -1,0 +1,32 @@
+{
+  "Mysql": {
+    "local" : {
+      "host": "127.0.0.1",
+      "port": 3306,
+      "user": "root",
+      "passwd": "root",
+      "db": "xiaofeibao",
+      "charset": "utf8"
+    },
+    "test": {
+      "host": "120.79.73.21",
+      "port": 3306,
+      "user": "xfb",
+      "passwd": "RcJP5HDjxJiP6nPN",
+      "db": "xfb",
+      "charset": "utf8mb4"
+    }
+  },
+  "MongoDb": {
+    "host" : "120.79.73.21",
+    "port" : 27017,
+    "database": "xfb",
+    "username": "xfb_test_mongodb",
+    "password": "xfb_test_mongodb_PassWord"
+  },
+  "Redis": {
+    "host": "127.0.0.1",
+    "port": 6379,
+    "auth": ""
+  }
+}
