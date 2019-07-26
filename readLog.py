@@ -108,7 +108,14 @@ class reader:
         _map['url'] = _arr[6].strip('')
         _map['status'] = _arr[8].strip('')
         _map['content_size'] = _arr[9].strip('')
-        _map['referer'] = _arr[10].strip('').strip('"')
+        try:
+            _map['referer'] = _arr[10].strip('').strip('"')
+        except Exception as e:
+            print(line)
+            print(_arr)
+            print('refere 匹配失败')
+            _map['referer'] = '-'
+
         _map['user_agent'] = ' '.join(_arr[11:-2]).strip(' ').strip('"')
 
 
