@@ -15,7 +15,7 @@ class reader:
         self.file = open(logPath)
         self.db = MongoDb('xfb','xfb_online_log').db
         self.insertData = []
-        self.insertData_max_len = 3000
+        self.insertData_max_len = 50
 
         self.startTailF()
         # self.startRead()
