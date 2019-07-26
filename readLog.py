@@ -71,7 +71,7 @@ class reader:
         _map = {}
 
         try:
-            request_time = _arr[0].strip('[')
+            request_time = _arr[0].strip('').strip('[')
             request_time.replace('[','')
             time_int = time.mktime(time.strptime(int(request_time), "%d/%b/%Y:%H:%M:%S"))
             time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
