@@ -114,8 +114,14 @@ class reader:
             print(line)
             print(_arr)
             _map['status'] = '0'
+        try:
+            _map['content_size'] = _arr[9].strip('')
+        except Exception as e:
+            print(line)
+            print(_arr)
+            print('content_size 匹配失败')
+            _map['content_size'] = ''
 
-        _map['content_size'] = _arr[9].strip('')
         try:
             _map['referer'] = _arr[10].strip('').strip('"')
         except Exception as e:
