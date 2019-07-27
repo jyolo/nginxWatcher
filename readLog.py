@@ -63,6 +63,7 @@ class reader:
             self.__lineLogToMongo(line)
 
     def __lineLogToMongo(self ,line):
+        print(line)
         line = line.strip()
         _arr = line.split(' ')
         # 过滤掉静态文件
@@ -111,6 +112,7 @@ class reader:
 
         _map['method'] = _arr[5].strip('').strip('"')
         _map['url'] = _arr[6].strip('')
+
         try:
             _map['status'] = _arr[8].strip('')
         except BaseException as e:
