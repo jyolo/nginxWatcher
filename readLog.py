@@ -22,7 +22,7 @@ class reader:
 
         self.logPid()
         self.file_path = logPath;
-        self.file = open(logPath)
+        self.file = open(logPath ,newline='\n')
 
 
         self.insertData = []
@@ -76,7 +76,7 @@ class reader:
 
     def __lineLogToMongo(self ,line ,fileObj):
 
-        print(fileObj.tell())
+       
 
         if(re.search(r'\"\-\"$', line) == None):
             print(line)
