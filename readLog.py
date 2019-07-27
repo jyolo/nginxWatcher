@@ -100,7 +100,8 @@ class reader:
             print(request_time)
             print('该行时间不匹配: %s' % line)
             pre_line = self.redis.get('pre_line')
-            print(pre_line)
+            print(pre_line + line)
+            
             exit()
 
 
