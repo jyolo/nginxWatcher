@@ -107,11 +107,9 @@ class reader:
             time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
         except BaseException as e:
             traceback.print_exc()
-            print(request_time)
+            print(_arr[0])
             print('该行时间不匹配: %s' % line)
-            pre_line = self.redis.get('pre_line')
-            print(pre_line + line)
-            exit()
+            return
 
 
 
