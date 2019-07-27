@@ -10,10 +10,15 @@ class reader:
         if(os.path.exists(logPath) == False):
             raise FileNotFoundError('日志文件路径不存在')
 
+        totday  = time.strftime("%d", time.localtime(time.time()))
+
+        self.dbName = 'xfb'
+        self.dbCollection = 'xfb_online_%s_log' % totday
+
         self.logPid()
         self.file_path = logPath;
         self.file = open(logPath)
-        self.db = MongoDb('xfb','xfb_online_log').db
+        self.db = MongoDb(self.dbName,self.dbCollection).db
         self.insertData = []
         self.insertData_max_len = 50
 
@@ -64,9 +69,9 @@ class reader:
         try:
             if (re.search(r'\.[js|css|png|jpg|ico]', _arr[6].strip(''))):
                 return
-        except Exception as e:
+        except BaseException as e:
             print('该行不匹配: %s' % line)
-            return
+            exit()
 
 
         _map = {}
@@ -77,12 +82,12 @@ class reader:
 
             time_int = time.mktime(time.strptime(request_time, "%d/%b/%Y:%H:%M:%S"))
             time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
-        except Exception as e:
+        except BaseException as e:
             traceback.print_exc()
             print(request_time)
             print('该行时间不匹配: %s' % line)
             print(_arr)
-            return
+            exit()
 
 
 
@@ -108,27 +113,31 @@ class reader:
         _map['url'] = _arr[6].strip('')
         try:
             _map['status'] = _arr[8].strip('')
-        except Exception as e:
+        except BaseException as e:
             traceback.print_exc()
             print('status 匹配错误')
             print(line)
             print(_arr)
             _map['status'] = '0'
+            exit()
+
         try:
             _map['content_size'] = _arr[9].strip('')
-        except Exception as e:
+        except BaseException as e:
             print(line)
             print(_arr)
             print('content_size 匹配失败')
             _map['content_size'] = ''
+            exit()
 
         try:
             _map['referer'] = _arr[10].strip('').strip('"')
-        except Exception as e:
+        except BaseException as e:
             print(line)
             print(_arr)
             print('refere 匹配失败')
             _map['referer'] = '-'
+            exit()
 
         _map['user_agent'] = ' '.join(_arr[11:-2]).strip(' ').strip('"')
 
@@ -139,7 +148,7 @@ class reader:
             try:
                 mid = self.db.insert_many(self.insertData)
             except AutoReconnect as e:
-                self.db = MongoDb('xfb', 'access_log').db
+                self.db = MongoDb(self.dbName, self.dbCollection).db
                 mid = self.db.insert_many(self.insertData)
 
             print(mid)
@@ -155,13 +164,14 @@ class reader:
             location = ip_result['region'].decode('utf-8').split('|')
 
             return location
-        except Exception as e:
+        except BaseException as e:
             traceback.print_exc()
             return  False
 
 
 
 if __name__ == "__main__":
+    # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\tt.log'
     # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\xfb.log'
     logPath = '/alidata/server/nginx/logs/xfb.log'
     reader(logPath)
