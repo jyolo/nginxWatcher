@@ -37,7 +37,7 @@ class reader:
 
     def startTailF(self):
 
-        with open(self.file_path,'r+') as f:
+        with open(self.file_path,'r+' ,newline='\n') as f:
             # 文件指针定位到文件末尾
             f.seek(0, 2)
             while True:
