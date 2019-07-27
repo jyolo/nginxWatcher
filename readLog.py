@@ -48,8 +48,6 @@ class reader:
                 # print('---------------------------->\n')
                 # print(line)
                 # print('---------------------------->\n')
-
-
                 self.__lineLogToMongo(line )
 
     # 记录当前 工作的 进程id
@@ -82,6 +80,8 @@ class reader:
         #'$status $body_bytes_sent "$http_referer" '
         #'"$http_user_agent" "$http_x_forwarded_for"';
         ####
+
+        print(re.search(r'"\n',line))
 
         line = line.strip()
         _arr = line.split(' ')
