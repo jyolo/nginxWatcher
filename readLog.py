@@ -94,7 +94,7 @@ class reader:
                 return
         except BaseException as e:
             print('该行不匹配: %s' % line)
-            exit()
+            return
 
 
         _map = {}
