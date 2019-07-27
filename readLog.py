@@ -81,7 +81,9 @@ class reader:
         #'"$http_user_agent" "$http_x_forwarded_for"';
         ####
 
-        print(re.search(r'"\n',line))
+        if(re.search(r'"\n',line) == None):
+            print('不是完整的一行： %s' % line)
+            return
 
         line = line.strip()
         _arr = line.split(' ')
@@ -215,7 +217,7 @@ class reader:
 
 
 if __name__ == "__main__":
-    # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\tt.log'
+    logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\tt.log'
     # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\xfb.log'
-    logPath = '/alidata/server/nginx/logs/xfb.log'
+    # logPath = '/alidata/server/nginx/logs/xfb.log'
     reader(logPath)
