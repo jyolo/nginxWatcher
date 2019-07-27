@@ -1,5 +1,6 @@
 import os,time,re,traceback
 from DataBase.Mongo import MongoDb
+from DataBase.Redis import Redis
 from pymongo.errors import *
 from ip2Region import Ip2Region
 
@@ -14,11 +15,15 @@ class reader:
 
         self.dbName = 'xfb'
         self.dbCollection = 'xfb_online_%s_log' % totday
+        self.db = MongoDb(self.dbName, self.dbCollection).db
+        self.redis = Redis(15).db
+
 
         self.logPid()
         self.file_path = logPath;
         self.file = open(logPath)
-        self.db = MongoDb(self.dbName,self.dbCollection).db
+
+
         self.insertData = []
         self.insertData_max_len = 50
 
@@ -42,6 +47,7 @@ class reader:
                 print('---------------------------->\n')
                 print(line)
                 print('---------------------------->\n')
+                self.redis.set('pre_line' ,line,60);
                 self.__lineLogToMongo(line)
 
     # 记录当前 工作的 进程id
@@ -91,7 +97,8 @@ class reader:
             traceback.print_exc()
             print(request_time)
             print('该行时间不匹配: %s' % line)
-            print(_arr)
+            pre_line = self.redis.get('pre_line')
+            print(pre_line)
             exit()
 
 
