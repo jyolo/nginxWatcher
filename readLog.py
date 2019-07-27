@@ -65,20 +65,27 @@ class reader:
         # self.file.readlines()
         while True:
             line = self.file.readline()
+
             # print('--------------%s' % self.file.tell() )
             if line == '':
                 print('read end done')
                 break
 
-
             # print(line)
             self.__lineLogToMongo(line)
 
-    def __lineLogToMongo(self ,line ,fileObj):
 
+    def __lineLogToMongo(self ,line ):
+        #####
+        # nginx log format 格式
+        #'[$time_local] $host $remote_addr - "$request" '
+        #'$status $body_bytes_sent "$http_referer" '
+        #'"$http_user_agent" "$http_x_forwarded_for"';
+        ####
 
         line = line.strip()
         _arr = line.split(' ')
+
         # 过滤掉静态文件
         try:
             if (re.search(r'\.[js|css|png|jpg|ico]', _arr[6].strip(''))):
@@ -138,6 +145,7 @@ class reader:
             _map['status'] = '0'
             exit()
 
+
         try:
             _map['content_size'] = _arr[9].strip('')
         except BaseException as e:
@@ -156,7 +164,26 @@ class reader:
             _map['referer'] = '-'
             exit()
 
-        _map['user_agent'] = ' '.join(_arr[11:-2]).strip(' ').strip('"')
+        # 后面的部分
+
+        last_part = line.split(' "')
+
+        _map['user_agent'] = last_part[-2].strip('"')
+        _map['http_x_forwarded_for'] = last_part[-1].strip('"')
+
+
+        if(re.search(r'-',_map['http_x_forwarded_for'])):
+            _map['http_x_forwarded_for'] = _map['http_x_forwarded_for'].strip('"')
+        else:
+            iplist = _map['http_x_forwarded_for'].split(',')
+            x_iplist = ''
+            for i in iplist:
+                x_ip = i.strip()
+                ip_result = self.ipDb.binarySearch(x_ip)
+                location = ip_result['region'].decode('utf-8')
+                x_iplist += '%s,%s' % (x_ip ,location) + '->'
+            _map['http_x_forwarded_for'] = x_iplist.strip('->')
+
 
 
         self.insertData.append(_map)
