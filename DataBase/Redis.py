@@ -10,7 +10,8 @@ class Redis(Model):
                 port=self.getConfig()['port'],
                 password=self.getConfig()['auth'],
                 db= DbName,
-                decode_responses=True
+                decode_responses=True,
+                retry_on_timeout=10,
             )
 
 

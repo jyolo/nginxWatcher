@@ -19,6 +19,7 @@ class reader:
         self.redis = Redis(15).db
 
 
+
         self.logPid()
         self.file_path = logPath;
         self.file = open(logPath)
@@ -47,7 +48,8 @@ class reader:
                 print('---------------------------->\n')
                 print(line)
                 print('---------------------------->\n')
-                self.redis.set('pre_line' ,line,60);
+                a = self.redis.set('pre_line' ,line,60)
+
                 self.__lineLogToMongo(line)
 
     # 记录当前 工作的 进程id

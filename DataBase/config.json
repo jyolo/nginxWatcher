@@ -26,7 +26,7 @@
   },
   "Redis": {
     "host": "120.78.248.191",
-    "port": 6379,
+    "port": 35535,
     "auth": "xiaofeibao@DEVE#redis%PASSWD*2018^"
   }
 }
