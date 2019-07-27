@@ -77,8 +77,8 @@ class reader:
     def __lineLogToMongo(self ,line):
         if(re.search(r'\"\-\"$', line) == None):
             print(line)
-            print('不是完整的一行')
-            exit()
+            print('不是完整的一行-------------------跳过')
+            return 
 
 
 
