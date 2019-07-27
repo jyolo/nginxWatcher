@@ -16,7 +16,7 @@ class reader:
         self.dbName = 'xfb'
         self.dbCollection = 'xfb_online_%s_log' % totday
         self.db = MongoDb(self.dbName, self.dbCollection).db
-        self.redis = Redis(15).db
+
 
 
 
@@ -28,8 +28,8 @@ class reader:
         self.insertData = []
         self.insertData_max_len = 50
 
-        self.startTailF()
-        # self.startRead()
+        # self.startTailF()
+        self.startRead()
         self.file.close()
 
 
@@ -48,7 +48,7 @@ class reader:
                 print('---------------------------->\n')
                 print(line)
                 print('---------------------------->\n')
-                a = self.redis.set('pre_line' ,line,60)
+
 
                 self.__lineLogToMongo(line)
 
@@ -75,6 +75,12 @@ class reader:
             self.__lineLogToMongo(line)
 
     def __lineLogToMongo(self ,line):
+        if(re.search(r'\"\-\"$', line) == None):
+            print(line)
+            print('不是完整的一行')
+            exit()
+
+
 
         line = line.strip()
         _arr = line.split(' ')
@@ -83,8 +89,6 @@ class reader:
             if (re.search(r'\.[js|css|png|jpg|ico]', _arr[6].strip(''))):
                 return
         except BaseException as e:
-            pre_line = self.redis.get('pre_line')
-            print(pre_line + line)
             print('该行不匹配: %s' % line)
             exit()
 
