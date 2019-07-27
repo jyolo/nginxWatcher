@@ -217,7 +217,7 @@ class reader:
 
 
 if __name__ == "__main__":
-    logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\tt.log'
+    # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\tt.log'
     # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\xfb.log'
-    # logPath = '/alidata/server/nginx/logs/xfb.log'
+    logPath = '/alidata/server/nginx/logs/xfb.log'
     reader(logPath)
