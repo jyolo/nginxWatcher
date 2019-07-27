@@ -28,8 +28,8 @@ class reader:
         self.insertData = []
         self.insertData_max_len = 50
 
-        # self.startTailF()
-        self.startRead()
+        self.startTailF()
+        # self.startRead()
         self.file.close()
 
 
@@ -71,7 +71,7 @@ class reader:
                 break
 
 
-            print(line)
+            # print(line)
             self.__lineLogToMongo(line)
 
     def __lineLogToMongo(self ,line):
