@@ -50,7 +50,7 @@ class reader:
                 # print('---------------------------->\n')
 
 
-                self.__lineLogToMongo(line ,f)
+                self.__lineLogToMongo(line )
 
     # 记录当前 工作的 进程id
     def logPid(self ,readType = 'w+'):
