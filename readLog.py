@@ -38,6 +38,10 @@ class reader:
                 line = f.readline()
                 if(line == ''):
                     continue
+
+                print('---------------------------->\n')
+                print(line)
+                print('---------------------------->\n')
                 self.__lineLogToMongo(line)
 
     # 记录当前 工作的 进程id
@@ -63,7 +67,7 @@ class reader:
             self.__lineLogToMongo(line)
 
     def __lineLogToMongo(self ,line):
-        print(line)
+
         line = line.strip()
         _arr = line.split(' ')
         # 过滤掉静态文件
