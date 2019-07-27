@@ -76,16 +76,6 @@ class reader:
 
     def __lineLogToMongo(self ,line ,fileObj):
 
-       
-
-        if(re.search(r'\"\-\"$', line) == None):
-            print(line)
-            print('不是完整的一行-------------------跳过')
-
-            return
-
-
-
 
         line = line.strip()
         _arr = line.split(' ')
