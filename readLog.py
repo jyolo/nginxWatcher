@@ -50,7 +50,7 @@ class reader:
                 # print('---------------------------->\n')
 
 
-                self.__lineLogToMongo(line)
+                self.__lineLogToMongo(line ,f)
 
     # 记录当前 工作的 进程id
     def logPid(self ,readType = 'w+'):
@@ -74,11 +74,16 @@ class reader:
             # print(line)
             self.__lineLogToMongo(line)
 
-    def __lineLogToMongo(self ,line):
+    def __lineLogToMongo(self ,line ,fileObj):
+
+        print(fileObj.tell())
+
         if(re.search(r'\"\-\"$', line) == None):
             print(line)
             print('不是完整的一行-------------------跳过')
+
             return
+
 
 
 
