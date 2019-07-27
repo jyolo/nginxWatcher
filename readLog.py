@@ -83,6 +83,8 @@ class reader:
             if (re.search(r'\.[js|css|png|jpg|ico]', _arr[6].strip(''))):
                 return
         except BaseException as e:
+            pre_line = self.redis.get('pre_line')
+            print(pre_line + line)
             print('该行不匹配: %s' % line)
             exit()
 
@@ -101,7 +103,7 @@ class reader:
             print('该行时间不匹配: %s' % line)
             pre_line = self.redis.get('pre_line')
             print(pre_line + line)
-            
+
             exit()
 
 
@@ -130,7 +132,8 @@ class reader:
         try:
             _map['status'] = _arr[8].strip('')
         except BaseException as e:
-            traceback.print_exc()
+            pre_line = self.redis.get('pre_line')
+            print(pre_line + line)
             print('status 匹配错误')
             print(line)
             print(_arr)
@@ -140,8 +143,8 @@ class reader:
         try:
             _map['content_size'] = _arr[9].strip('')
         except BaseException as e:
-            print(line)
-            print(_arr)
+            pre_line = self.redis.get('pre_line')
+            print(pre_line + line)
             print('content_size 匹配失败')
             _map['content_size'] = ''
             exit()
@@ -149,8 +152,8 @@ class reader:
         try:
             _map['referer'] = _arr[10].strip('').strip('"')
         except BaseException as e:
-            print(line)
-            print(_arr)
+            pre_line = self.redis.get('pre_line')
+            print(pre_line + line)
             print('refere 匹配失败')
             _map['referer'] = '-'
             exit()
