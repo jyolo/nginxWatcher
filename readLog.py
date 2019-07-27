@@ -45,9 +45,9 @@ class reader:
                 if(line == ''):
                     continue
 
-                print('---------------------------->\n')
-                print(line)
-                print('---------------------------->\n')
+                # print('---------------------------->\n')
+                # print(line)
+                # print('---------------------------->\n')
 
 
                 self.__lineLogToMongo(line)
@@ -78,7 +78,7 @@ class reader:
         if(re.search(r'\"\-\"$', line) == None):
             print(line)
             print('不是完整的一行-------------------跳过')
-            return 
+            return
 
 
 
@@ -107,7 +107,6 @@ class reader:
             print('该行时间不匹配: %s' % line)
             pre_line = self.redis.get('pre_line')
             print(pre_line + line)
-
             exit()
 
 
