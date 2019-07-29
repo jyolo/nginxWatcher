@@ -33,8 +33,8 @@
 
 
 ## 启动脚本 
-    1：安装依赖包 pip install requirements.txt
-    2：nohup /usr/bin/python3 -u ./run.py watch /www/wwwlogs/xfb.log > nohup.out  2 >&1 &
+    1：安装依赖包 pip install -r requirements.txt
+    2：nohup /usr/bin/python3 readLog.py -f  /alidata/server/nginx/logs/xfb.log > nohup.out  2 >&1 &
     
     note: watch 对应的日志文件.log  [ 支持多个nginx日志 同时监控 ]
 

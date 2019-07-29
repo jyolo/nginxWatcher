@@ -57,7 +57,7 @@ class analysisa:
             for j in sub_res:
                 print(j)
 
-    # 统计被访问url的最多次数的站点
+    # 统计被访问url的最多次数的页面
     def getTopRequsetMostPage(self):
         exp = [
             {'$group': {'_id': '$url', 'total_num': {'$sum': 1}}},
@@ -82,11 +82,11 @@ class analysisa:
 
     def start(self):
         # 获取访问前十 的ip
-        self.getTop10Ip()
+        # self.getTop10Ip()
 
         # self.getTop10IpWitheveryPage()
 
-
+        self.getTopRequsetMostPage()
 
 
 

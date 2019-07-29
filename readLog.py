@@ -1,4 +1,4 @@
-import os,time,re,traceback
+import os,time,re,traceback,sys
 from DataBase.Mongo import MongoDb
 from DataBase.Redis import Redis
 from pymongo.errors import *
@@ -16,8 +16,6 @@ class reader:
         self.dbName = 'xfb'
         self.dbCollection = 'xfb_online_%s_log' % totday
         self.db = MongoDb(self.dbName, self.dbCollection).db
-
-
 
 
         self.logPid()
@@ -90,7 +88,7 @@ class reader:
 
         # 过滤掉静态文件
         try:
-            if (re.search(r'\.[js|css|png|jpg|ico]', _arr[6].strip(''))):
+            if (re.search(r'\.[js|css|png|jpg|ico|woff]', _arr[6].strip(''))):
                 return
         except BaseException as e:
             print('该行不匹配: %s' % line)
@@ -217,5 +215,20 @@ class reader:
 if __name__ == "__main__":
     # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\tt.log'
     # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\xfb.log'
-    logPath = '/alidata/server/nginx/logs/xfb.log'
-    reader(logPath)
+    # logPath = '/alidata/server/nginx/logs/xfb.log'
+    # reader(logPath)
+
+    try:
+        commond = sys.argv[1]
+        if (commond == '-f'):
+            logPath = sys.argv[2]
+            if(os.path.exists(logPath) == False):
+                print('logpath is not exists : %s' % logPath)
+            else:
+                reader(logPath)
+
+    except IndexError as e:
+        print('args error : for example \n')
+        print('    python readLogpy support args : \n')
+        print('    -f  /server/nginx/logs/yourlog.log \n')
+
