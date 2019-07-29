@@ -82,11 +82,11 @@ class analysisa:
 
     def start(self):
         # 获取访问前十 的ip
-        # self.getTop10Ip()
+        self.getTop10Ip()
 
         # self.getTop10IpWitheveryPage()
 
-        self.getTopRequsetMostPage()
+        # self.getTopRequsetMostPage()
 
 
 
