@@ -1,15 +1,15 @@
 import os,time,re,traceback,sys
+import multiprocessing
 from DataBase.Mongo import MongoDb
-from DataBase.Redis import Redis
 from pymongo.errors import *
 from ip2Region import Ip2Region
 
-class reader:
+class nginxLogWatcher:
 
     def __init__(self ,logPath):
         print('--start time : %s' % time.time())
         if(os.path.exists(logPath) == False):
-            raise FileNotFoundError('日志文件路径不存在')
+            raise FileNotFoundError('logfile is not exsits')
 
         totday  = time.strftime("%d", time.localtime(time.time()))
 
@@ -27,16 +27,14 @@ class reader:
         self.insertData_max_len = 50
 
         self.startTailF()
-        # self.startRead()
         self.file.close()
 
 
-        print('--end time : %s' % time.time())
 
     def startTailF(self):
 
         with open(self.file_path,'r+' ,newline='\n') as f:
-            # 文件指针定位到文件末尾
+            # to file end
             f.seek(0, 2)
             while True:
                 line = f.readline()
@@ -49,7 +47,7 @@ class reader:
                 self.__lineLogToMongo(line )
                 time.sleep(0.1)
 
-    # 记录当前 工作的 进程id
+    # log pid
     def logPid(self ,readType = 'w+'):
         f = open('readLogWorker.pid', readType)
         if readType == 'w+':
@@ -58,44 +56,30 @@ class reader:
             f.write(' %s' % os.getpid())
         f.close()
 
-    def startRead(self):
-        # self.file.readlines()
-        while True:
-            line = self.file.readline()
-
-            # print('--------------%s' % self.file.tell() )
-            if line == '':
-                print('read end done')
-                break
-
-            # print(line)
-            self.__lineLogToMongo(line)
-
-            time.sleep(1)
-
 
     def __lineLogToMongo(self ,line ):
         #####
-        # nginx log format 格式
+        # nginx log format
         #'[$time_local] $host $remote_addr - "$request" '
         #'$status $body_bytes_sent "$http_referer" '
         #'"$http_user_agent" "$http_x_forwarded_for"';
         ####
 
         if(re.search(r'"\n',line) == None):
-            print('不是完整的一行： %s' % line)
-            return
+            print('not a line')
+            print(line)
+            exit()
 
         line = line.strip()
         _arr = line.split(' ')
 
-        # 过滤掉静态文件
+        # filter static file
         try:
             if (re.search(r'\.[js|css|png|jpg|ico|woff]', _arr[6].strip(''))):
                 return
         except BaseException as e:
-            print('该行不匹配: %s' % line)
-            return
+            print('not match static file: %s' % line)
+            exit()
 
 
         _map = {}
@@ -109,27 +93,23 @@ class reader:
         except BaseException as e:
             traceback.print_exc()
             print(_arr[0])
-            print('该行时间不匹配: %s' % line)
-            return
+            print('not match time: %s' % line)
+            exit()
 
         try:
             _map['status'] = _arr[8].strip('')
         except BaseException as e:
-            pre_line = self.redis.get('pre_line')
-            print(pre_line + line)
-            print('status 匹配错误')
+            print('status match error')
             print(line)
             print(_arr)
             _map['status'] = '0'
-            return
+            exit()
 
 
         try:
             _map['content_size'] = _arr[9].strip('')
         except BaseException as e:
-            pre_line = self.redis.get('pre_line')
-            print(pre_line + line)
-            print('content_size 匹配失败')
+            print('content_size match error')
             _map['content_size'] = ''
             return
 
@@ -137,9 +117,7 @@ class reader:
         try:
             _map['referer'] = _arr[10].strip('').strip('"')
         except BaseException as e:
-            pre_line = self.redis.get('pre_line')
-            print(pre_line + line)
-            print('refere 匹配失败')
+            print('refere match error')
             _map['referer'] = '-'
             return
 
@@ -148,6 +126,7 @@ class reader:
         _map['web_site'] = _arr[2].strip('')
         _map['ip'] = _arr[3].strip('')
         ip2location = self.__ipLocation(_map['ip'])
+
         if (ip2location != False):
             _map['country'] = ip2location[0]
             _map['region'] = ip2location[1]
@@ -166,7 +145,7 @@ class reader:
 
 
 
-        # 后面的部分
+        # ua and x_forward_for
 
         last_part = line.split(' "')
 
@@ -187,7 +166,7 @@ class reader:
             _map['http_x_forwarded_for'] = x_iplist.strip('->')
 
 
-
+        # print(_map)
         self.insertData.append(_map)
         print(len(self.insertData))
         if(len(self.insertData) >= self.insertData_max_len):
@@ -199,7 +178,6 @@ class reader:
 
             print(mid)
             self.insertData = []
-
 
 
     def __ipLocation(self,ip):
@@ -223,6 +201,12 @@ class reader:
 
 
 
+
+def startWatcher(logpath):
+    nginxLogWatcher(logpath)
+
+
+
 if __name__ == "__main__":
     # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\tt.log'
     # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\xfb.log'
@@ -236,7 +220,18 @@ if __name__ == "__main__":
             if(os.path.exists(logPath) == False):
                 print('logpath is not exists : %s' % logPath)
             else:
-                reader(logPath)
+                startWatcher(logPath)
+                # watch = multiprocessing.Process(target=startWatcher ,args=(logPath,))
+                # # watch.daemon = True
+                # watch.start()
+                #
+                # # nginxLogWatcher(logPath)
+                # while 1:
+                #     print(watch.pid)
+                #     # if(watch.is_alive() == False):
+                #     print(watch.is_alive())
+                #     time.sleep(2)
+
 
     except IndexError as e:
         print('args error : for example \n')
