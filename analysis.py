@@ -17,9 +17,9 @@ class analysisa:
     def getTop10Ip(self):
         # 统计每个ip 访问的次数
         exp = [
-            {'$project': {'_id': 1, 'ip': 1, 'country': 1, 'city': 1}},
+            {'$project': {'_id': 1, 'ip': 1, 'country': 1,'province':1, 'city': 1}},
             # {'$group':{'_id':'$ip' ,'total_num':{'$sum':1} ,'country':{'$addToSet': '$country'} ,'city':{'$addToSet': '$city'} }},
-            {'$group': {'_id': '$ip', 'total_num': {'$sum': 1}, 'country': {'$addToSet': '$country'},
+            {'$group': {'_id': '$ip', 'total_num': {'$sum': 1}, 'country': {'$addToSet': '$country'},'province':{'$addToSet':'$province'},
                         'city': {'$addToSet': '$city'}}},
             {'$sort': {'total_num': -1}},
             {'$limit': 10},

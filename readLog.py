@@ -109,7 +109,36 @@ class reader:
             print('该行时间不匹配: %s' % line)
             return
 
+        try:
+            _map['status'] = _arr[8].strip('')
+        except BaseException as e:
+            pre_line = self.redis.get('pre_line')
+            print(pre_line + line)
+            print('status 匹配错误')
+            print(line)
+            print(_arr)
+            _map['status'] = '0'
+            return
 
+
+        try:
+            _map['content_size'] = _arr[9].strip('')
+        except BaseException as e:
+            pre_line = self.redis.get('pre_line')
+            print(pre_line + line)
+            print('content_size 匹配失败')
+            _map['content_size'] = ''
+            return
+
+
+        try:
+            _map['referer'] = _arr[10].strip('').strip('"')
+        except BaseException as e:
+            pre_line = self.redis.get('pre_line')
+            print(pre_line + line)
+            print('refere 匹配失败')
+            _map['referer'] = '-'
+            return
 
         _map['time_str'] = time_str
         _map['time_int'] = int(time_int)
@@ -132,35 +161,7 @@ class reader:
         _map['method'] = _arr[5].strip('').strip('"')
         _map['url'] = _arr[6].strip('')
 
-        try:
-            _map['status'] = _arr[8].strip('')
-        except BaseException as e:
-            pre_line = self.redis.get('pre_line')
-            print(pre_line + line)
-            print('status 匹配错误')
-            print(line)
-            print(_arr)
-            _map['status'] = '0'
-            exit()
 
-
-        try:
-            _map['content_size'] = _arr[9].strip('')
-        except BaseException as e:
-            pre_line = self.redis.get('pre_line')
-            print(pre_line + line)
-            print('content_size 匹配失败')
-            _map['content_size'] = ''
-            exit()
-
-        try:
-            _map['referer'] = _arr[10].strip('').strip('"')
-        except BaseException as e:
-            pre_line = self.redis.get('pre_line')
-            print(pre_line + line)
-            print('refere 匹配失败')
-            _map['referer'] = '-'
-            exit()
 
         # 后面的部分
 
@@ -206,6 +207,13 @@ class reader:
             location = ip_result['region'].decode('utf-8').split('|')
 
             return location
+
+        except OSError as e:
+            traceback.print_exc()
+            return False
+        except SyntaxError as e:
+            traceback.print_exc()
+            return False
         except BaseException as e:
             traceback.print_exc()
             return  False
