@@ -35,10 +35,11 @@
 ## 启动脚本 
     
     1：安装依赖包 pip install -r requirements.txt
-    2：nohup python3 watcher.py -f  /alidata/server/nginx/logs/xfb.log > nohup.out  2>&1 &
-    
+    # -u 关闭python 缓冲
+    2：nohup python3 -u watcher.py -f  /alidata/server/nginx/logs/xfb.log > nohup.out  2>&1 &
+        
     note: watch 对应的日志文件.log  [ 支持多个nginx日志 同时监控 ]
 
 ## 停止脚本
 
-    /usr/bin/python3 stopWatcher.py
+    python3 stopWatcher.py
