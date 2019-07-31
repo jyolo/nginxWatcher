@@ -33,6 +33,7 @@
 
 
 ## 启动脚本 
+    
     1：安装依赖包 pip install -r requirements.txt
     2：nohup python3 watcher.py -f  /alidata/server/nginx/logs/xfb.log > nohup.out  2>&1 &
     
