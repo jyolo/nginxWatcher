@@ -47,7 +47,7 @@ class reader:
                 # print(line)
                 # print('---------------------------->\n')
                 self.__lineLogToMongo(line )
-                time.sleep(1)
+                time.sleep(0.1)
 
     # 记录当前 工作的 进程id
     def logPid(self ,readType = 'w+'):
