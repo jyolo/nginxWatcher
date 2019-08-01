@@ -1,5 +1,11 @@
-import time
+import time,json
 from DataBase.Mongo import MongoDb
+from flask import Flask ,render_template
+
+
+
+app = Flask(__name__)
+
 
 
 class analysisa:
@@ -11,7 +17,7 @@ class analysisa:
         self.dbCollection = 'xfb_online_%s_log' % totday
 
         self.db = MongoDb(self.dbName,self.dbCollection).db
-        self.start()
+
 
     # 获取访问前十 的ip
     def getTop10Ip(self):
@@ -26,17 +32,19 @@ class analysisa:
         ]
 
         res = self.db.aggregate(exp)
+        _list = []
         for i in res:
-            print(i)
+            _list.append(i)
+
+        return _list
 
     # 统计访问前十对应的ip 访问了哪些 页面 以及 每个页面 的对应的 次数
     def getTop10IpWitheveryPage(self):
         # 统计每个ip 访问的次数
         exp = [
-            {'$project': {'_id': 1, 'ip': 1, 'country': 1, 'city': 1}},
+            {'$project': {'ip':'$ip', '_id': 0, 'country': 1, 'city': 1 ,'user_agent':1}},
             # {'$group':{'_id':'$ip' ,'total_num':{'$sum':1} ,'country':{'$addToSet': '$country'} ,'city':{'$addToSet': '$city'} }},
-            {'$group': {'_id': '$ip', 'total_num': {'$sum': 1}, 'country': {'$addToSet': '$country'},
-                        'city': {'$addToSet': '$city'}}},
+            {'$group': {'_id': '$ip', 'total_num': {'$sum': 1}, 'country': {'$addToSet': '$country'},'ua':{'$addToSet':'$user_agent'},'city': {'$addToSet': '$city'}}},
             {'$sort': {'total_num': -1}},
             {'$limit': 10},
         ]
@@ -68,7 +76,6 @@ class analysisa:
         return _list
 
 
-
     # 统计被访问url的最多次数的页面
     def getTopRequsetMostPage(self):
         exp = [
@@ -77,8 +84,10 @@ class analysisa:
             {'$limit': 50},
         ]
         res = self.db.aggregate(exp)
+        _list = []
         for i in res:
-            print(i)
+            _list.append(i)
+        return _list
 
     # 所有国家访问的次数
     def getTop10RequstCountry(self):
@@ -90,8 +99,10 @@ class analysisa:
             # {'$limit': 20},
         ]
         res = self.db.aggregate(exp)
+        _list = []
         for i in res:
-            print(i)
+            _list.append(i)
+        return _list
 
     def getTopStatus(self):
         # 统计来访者的国家
@@ -102,8 +113,10 @@ class analysisa:
             # {'$limit': 10},
         ]
         res = self.db.aggregate(exp)
+        _list = []
         for i in res:
-            print(i)
+            _list.append(i)
+        return _list
 
     # 总的ip的请求数
     def getAllIp(self):
@@ -116,29 +129,99 @@ class analysisa:
         ]
         res = self.db.aggregate(exp)
 
+        _list = []
         for i in res:
-            print(i)
+            _list.append(i)
+        return _list
 
     def start(self):
         # 获取访问前十 的ip
         # self.getTop10Ip()
+
         # 获取访问前十 的ip 以及 访问每个页面的次数 以及 时间
         # self.getTop10IpWitheveryPage()
+
         # 所有访问最多的请求页面
         # self.getTopRequsetMostPage()
+
         # 所有国家访问的次数
         # self.getTop10RequstCountry()
+
         # 所有请求次数的统计
         # self.getTopStatus()
+
         # 总的ip的请求数
-        self.getAllIp()
+        # self.getAllIp()
+        pass
 
 
+@app.route('/')
+def index():
+    return render_template('index.html')
+    pass
 
+@app.route('/getApiMap')
+def get_api_map():
+    str += '打开监控控制面板 <br/>'
+    str += '/getTop10IpWitheveryPage <br/>'
+    str += '<hr/>'
 
+    str =  '获取访问前十 的ip <br/>'
+    str += '/getTop10Ip <br/>'
+    str += '<hr/>'
 
+    str += '获取访问前十 的ip 以及 访问每个页面的次数 以及 时间 <br/>'
+    str += '/getTop10IpWitheveryPage <br/>'
+    str += '<hr/>'
 
+    str += '所有访问最多的请求页面<br/>'
+    str += '/getTopRequsetMostPage <br/>'
+    str += '<hr/>'
+
+    str += '所有国家访问的次数<br/>'
+    str += '/getTop10RequstCountry<br/>'
+    str += '<hr/>'
+
+    str += '所有请求次数的统计<br/>'
+    str += 'getTopStatus<br/>'
+    str += '<hr/>'
+
+    str += '总的ip的请求数<br/>'
+    str += 'getAllIp<br/>'
+
+    return  str
+
+@app.route('/getTop10Ip')
+def getTop10Ip():
+    res = analysisa().getTop10Ip()
+    return json.dumps(res, ensure_ascii=False)
+    # return json.dumps(res)
+
+@app.route('/getTop10IpWitheveryPage')
+def getTop10IpWitheveryPage():
+    res = analysisa().getTop10IpWitheveryPage()
+    return json.dumps(res, ensure_ascii=False)
+
+@app.route('/getTopRequsetMostPage')
+def getTopRequsetMostPage():
+    res = analysisa().getTopRequsetMostPage()
+    return json.dumps(res, ensure_ascii=False)
+
+@app.route('/getTop10RequstCountry')
+def getTop10RequstCountry():
+    res = analysisa().getTop10RequstCountry()
+    return json.dumps(res, ensure_ascii=False)
+
+@app.route('/getTopStatus')
+def getTopStatus():
+    res = analysisa().getTopStatus()
+    return json.dumps(res, ensure_ascii=False)
+
+@app.route('/getAllIp')
+def getAllIp():
+    res = analysisa().getAllIp()
+    return json.dumps(res, ensure_ascii=False)
 
 if __name__ == "__main__":
-
-    analysisa()
+    app.debug = True
+    app.run(host='0.0.0.0')
