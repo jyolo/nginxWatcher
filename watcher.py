@@ -11,8 +11,8 @@ class nginxLogWatcher:
         if(os.path.exists(logPath) == False):
             raise FileNotFoundError('logfile is not exsits')
 
-        totday  = time.strftime("%d", time.localtime(time.time()))
-
+        totday  = time.strftime("%Y_%m_%d", time.localtime(time.time()))
+        
         self.dbName = 'xfb'
         self.dbCollection = 'xfb_online_%s_log' % totday
         self.db = MongoDb(self.dbName, self.dbCollection).db
@@ -87,7 +87,7 @@ class nginxLogWatcher:
         if(re.search(r'"\n',line) == None):
             print('not a line')
             print(line)
-            return 
+            return
 
         line = line.strip()
         _arr = line.split(' ')
