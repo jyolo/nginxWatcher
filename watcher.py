@@ -87,7 +87,7 @@ class nginxLogWatcher:
         if(re.search(r'"\n',line) == None):
             print('not a line')
             print(line)
-            exit()
+            return 
 
         line = line.strip()
         _arr = line.split(' ')
