@@ -162,8 +162,9 @@ def index():
 
 @app.route('/getApiMap')
 def get_api_map():
-    str += '打开监控控制面板 <br/>'
-    str += '/getTop10IpWitheveryPage <br/>'
+
+    str = '打开监控控制面板 <br/>'
+    str += '/ <br/>'
     str += '<hr/>'
 
     str =  '获取访问前十 的ip <br/>'
@@ -183,11 +184,11 @@ def get_api_map():
     str += '<hr/>'
 
     str += '所有请求次数的统计<br/>'
-    str += 'getTopStatus<br/>'
+    str += '/getTopStatus<br/>'
     str += '<hr/>'
 
     str += '总的ip的请求数<br/>'
-    str += 'getAllIp<br/>'
+    str += '/getAllIp<br/>'
 
     return  str
 

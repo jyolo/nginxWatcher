@@ -1,4 +1,4 @@
-import os,time,re,traceback,sys
+import os,time,re,traceback,sys,subprocess
 import multiprocessing
 from DataBase.Mongo import MongoDb
 from pymongo.errors import *
@@ -31,21 +31,40 @@ class nginxLogWatcher:
 
 
 
-    def startTailF(self):
+    def startTailF(self ,cmd = ''):
 
         with open(self.file_path,'r+' ,newline='\n') as f:
-            # to file end
+
             f.seek(0, 2)
+            # 当文件被切割或者文件被修改过后 由于 文件指针已经被改变 会始终读取不到数据
+            # empty_line_time 为计数器，当始终无法获取数据 超过一定次数 则关闭文件句柄 从新
+            # 打开文件 并把指针指向文件末尾从新读取文件
+            # 计数器 可根据网站流量
+            empty_line_time = 0
             while True:
+                time.sleep(0.1)
                 line = f.readline()
+
+                # 当前获取不到记录的时候 把文件指针 指向文件头部
                 if(line == ''):
+                    print('# 读到空行%s数' % empty_line_time)
+                    time.sleep(0.5)
+                    if empty_line_time >= 2:
+                        print('reopen file waiting for line')
+                        f.close()
+                        self.startTailF()
+                    else:
+                        empty_line_time = empty_line_time + 1
                     continue
+
+                empty_line_time = 0
+
 
                 # print('---------------------------->\n')
                 # print(line)
                 # print('---------------------------->\n')
                 self.__lineLogToMongo(line )
-                time.sleep(0.1)
+
 
     # log pid
     def logPid(self ,readType = 'w+'):
@@ -166,7 +185,7 @@ class nginxLogWatcher:
             _map['http_x_forwarded_for'] = x_iplist.strip('->')
 
 
-        # print(_map)
+
         self.insertData.append(_map)
         print(len(self.insertData))
         if(len(self.insertData) >= self.insertData_max_len):
@@ -213,8 +232,13 @@ if __name__ == "__main__":
     # logPath = '/alidata/server/nginx/logs/xfb.log'
     # reader(logPath)
 
+    # start_cmd = 'nohup python3 -u watcher.py -f  %s > nohup.out  2>&1 &'
+    # start_cmd = 'python3  /mnt/hgfs/MyPythonProject/nginxWatcher/watcher.py -f  %s '
+    # stop_cmd = 'python3 stopWatcher.py'
+
     try:
         commond = sys.argv[1]
+
         if (commond == '-f'):
             logPath = sys.argv[2]
             if(os.path.exists(logPath) == False):
@@ -234,6 +258,7 @@ if __name__ == "__main__":
 
 
     except IndexError as e:
+        traceback.print_exc()
         print('args error : for example \n')
         print('    python readLogpy support args : \n')
         print('    -f  /server/nginx/logs/yourlog.log \n')
