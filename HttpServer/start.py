@@ -11,7 +11,7 @@ app = Flask(__name__)
 class analysisa:
 
     def __init__(self):
-        totday = time.strftime("%d", time.localtime(time.time()))
+        totday  = time.strftime("%Y_%m_%d", time.localtime(time.time()))
 
         self.dbName = 'xfb'
         self.dbCollection = 'xfb_online_%s_log' % totday

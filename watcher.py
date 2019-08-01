@@ -12,7 +12,7 @@ class nginxLogWatcher:
             raise FileNotFoundError('logfile is not exsits')
 
         totday  = time.strftime("%Y_%m_%d", time.localtime(time.time()))
-        
+
         self.dbName = 'xfb'
         self.dbCollection = 'xfb_online_%s_log' % totday
         self.db = MongoDb(self.dbName, self.dbCollection).db
@@ -49,7 +49,7 @@ class nginxLogWatcher:
                 if(line == ''):
                     print('# 读到空行%s数' % empty_line_time)
                     time.sleep(0.5)
-                    if empty_line_time >= 2:
+                    if empty_line_time >= 10:
                         print('reopen file waiting for line')
                         f.close()
                         self.startTailF()
