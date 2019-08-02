@@ -58,7 +58,9 @@ class nginxLogWatcher:
                     continue
 
                 empty_line_time = 0
-
+                # 保持存储集合按天分割
+                totday = time.strftime("%Y_%m_%d", time.localtime(time.time()))
+                self.dbCollection = 'xfb_online_%s_log' % totday
 
                 # print('---------------------------->\n')
                 # print(line)
