@@ -1,7 +1,7 @@
 import time,json
 from DataBase.Mongo import MongoDb
-from flask import Flask ,render_template
-
+from flask import Flask ,render_template,request,jsonify,logging
+import multiprocessing
 
 
 app = Flask(__name__)
@@ -12,10 +12,8 @@ class analysisa:
 
     def __init__(self):
         totday  = time.strftime("%Y_%m_%d", time.localtime(time.time()))
-
         self.dbName = 'xfb'
         self.dbCollection = 'xfb_online_%s_log' % totday
-
         self.db = MongoDb(self.dbName,self.dbCollection).db
 
 
@@ -37,6 +35,21 @@ class analysisa:
             _list.append(i)
 
         return _list
+
+    # 获取某个ip的访问详情
+    def getTop10IpDetail(self ,ip ,page ,limit=10):
+        # 获取某个ip的访问详情
+        ip = ip.strip()
+        offset = (page-1)*limit
+
+        # 查询中 object_id 如果是对象 json.dumps会报错
+        res = self.db.find({'ip': {'$eq': ip}},{'_id':0} ).sort('time_int', -1).skip(offset).limit(limit)
+        count = self.db.find({'ip': {'$eq': ip}},{'_id':0} ).count()
+
+
+        _list = list(res)
+
+        return (_list,count)
 
     # 统计访问前十对应的ip 访问了哪些 页面 以及 每个页面 的对应的 次数
     def getTop10IpWitheveryPage(self):
@@ -196,7 +209,29 @@ def get_api_map():
 def getTop10Ip():
     res = analysisa().getTop10Ip()
     return json.dumps(res, ensure_ascii=False)
-    # return json.dumps(res)
+
+
+@app.route('/getTop10IpDetail',methods=['get','post'])
+def getTop10IpDetail():
+    if(request.method == 'GET'):
+        return render_template('top_ip_detail.html')
+
+    if(request.method == 'POST'):
+        ip = request.form.get('ip')
+        p = request.form.get('page')
+        l = request.form.get('limit')
+        res = analysisa().getTop10IpDetail(ip ,page = int(p),limit = int(l))
+
+        _return = {
+          "code": 0,
+          "msg": "success",
+          "count": res[1],
+          "data": res[0]
+        }
+        return json.dumps(_return, ensure_ascii=False)
+
+
+
 
 @app.route('/getTop10IpWitheveryPage')
 def getTop10IpWitheveryPage():
@@ -213,8 +248,8 @@ def getTop10RequstCountry():
     res = analysisa().getTop10RequstCountry()
     return json.dumps(res, ensure_ascii=False)
 
-@app.route('/getTopStatus')
-def getTopStatus():
+@app.route('/getAllStatus')
+def getAllStatus():
     res = analysisa().getTopStatus()
     return json.dumps(res, ensure_ascii=False)
 
@@ -223,6 +258,26 @@ def getAllIp():
     res = analysisa().getAllIp()
     return json.dumps(res, ensure_ascii=False)
 
+
+
+
 if __name__ == "__main__":
+
+    # analysisa().getTop10IpDetail()
     app.debug = True
     app.run(host='0.0.0.0')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

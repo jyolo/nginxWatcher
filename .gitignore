@@ -1,2 +1,5 @@
 /read.log
 /DataBase/config.json
+/__pycache__/*.pyc
+/DataBase/__pycache__/*.pyc
+/.idea/*.iml

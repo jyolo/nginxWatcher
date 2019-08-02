@@ -1,10 +1,214 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Title</title>
+	<meta charset="UTF-8">
+	<title>nginxWatcher</title>
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="/static/layui/css/layui.css">
+	<link rel="stylesheet" href="/static/css/mian.css">
+	<script src="http://cdn.highcharts.com.cn/highcharts/highcharts.js"></script>
+
 </head>
-<body>
-    <h1>1111</h1>
+<body class="lay-blog">
+		<div class="header">
+			<div class="header-wrap">
+				<h1 class="logo pull-left">
+					<a href="/">
+						<img src="/static/images/logo.png" alt="" class="logo-img">
+
+					</a>
+				</h1>
+<!--				<form class="layui-form blog-seach pull-left" action="">-->
+<!--					<div class="layui-form-item blog-sewrap">-->
+<!--					    <div class="layui-input-block blog-sebox">-->
+<!--					      <i class="layui-icon layui-icon-search"></i>-->
+<!--					      <input type="text" name="title" lay-verify="title" autocomplete="off"  class="layui-input">-->
+<!--					    </div>-->
+<!--					</div>-->
+<!--				</form>-->
+				<div class="blog-nav pull-right">
+					<ul class="layui-nav pull-left">
+					  <li class="layui-nav-item layui-this"><a href="index.html">首页</a></li>
+					  <li class="layui-nav-item"><a href="message.html">留言</a></li>
+					  <li class="layui-nav-item"><a href="about.html">关于</a></li>
+					</ul>
+<!--					<a href="#" class="personal pull-left">-->
+<!--						<i class="layui-icon layui-icon-username"></i>-->
+<!--					</a>-->
+				</div>
+				<div class="mobile-nav pull-right" id="mobile-nav">
+					<a href="javascript:;">
+						<i class="layui-icon layui-icon-more"></i>
+					</a>
+				</div>
+			</div>
+			<ul class="pop-nav" id="pop-nav">
+				<li><a href="index.html">首页</a></li>
+<!--				<li><a href="message.html">留言</a></li>-->
+				<li><a href="about.html">关于</a></li>
+			</ul>
+		</div>
+
+		<div class="container-wrap">
+			<div class="container">
+					<div class="contar-wrap">
+						<div class="">
+							<h4 class="item-title">
+								<p><i class="layui-icon layui-icon-speaker"></i>公告：<span>欢迎来到我的nginxWatcher</span></p>
+							</h4>
+
+							<div class="item">
+								<div class="item-box  layer-photos-demo3 layer-photos-demo">
+									<div class="item-box">
+										<div id="getTop10Ip" style="width: auto;height:400px;"></div>
+									</div>
+								</div>
+								<div class="comment count">
+									<a href="/getTop10IpDetail" style="width: 100%">查看前十IP访问详情</a>
+								</div>
+							</div>
+
+							<div class="item">
+								<div class="item-box  layer-photos-demo3 layer-photos-demo">
+									<div class="item-box">
+										<div id="getAllStatus" style="width: auto;height:400px;"></div>
+									</div>
+								</div>
+								<div class="comment count">
+									<a href="/" style="width: 100%">查看响应的链接详情</a>
+								</div>
+							</div>
+
+
+
+						</div>
+					</div>
+
+
+
+			</div>
+		</div>
+		<div class="footer">
+			<p>
+				<span>&copy; 2018</span>
+				<span><a href="http://www.layui.com" target="_blank">layui.com</a></span> 
+				<span>MIT license</span>
+			</p>
+			<p><span>人生就是一场修行</span></p>
+		</div>
+	<script src="/static/layui/layui.js"></script>
+	<script src="/static/js/global.js"></script>
+	<script>
+		layui.config({
+		  base: '/static/js/' 
+		}).use('blog');
+
+
+		layui.use(['jquery'],function(){
+			var $ = layui.jquery
+
+
+			function getTop10Ip(){
+				$.get('/getTop10Ip ',{},function(msg){
+					jsonObj = JSON.parse(msg)
+					x = []
+					y = []
+
+					$.each(jsonObj,function(i,n){
+						x.push(n._id +' '+ n.country[0] + n.city[0])
+						y.push(n.total_num)
+					})
+
+					// 图表配置
+					var options ={
+
+						title:{
+							text:'访问最多的前十IP 请求次数',
+						},
+						chart: {
+							type: 'column'
+						},
+						xAxis: {
+							categories: x
+						},
+						yAxis:{
+							title:{
+								text:'请求次数'
+							}
+						},
+						plotOptions: {
+							series: {
+								allowPointSelect: false
+							}
+						},
+						chart: {
+							events: {
+								click: function (e) {
+									console.log(e)
+									console.log(e.yAxis[0].value)
+								}
+							}
+						},
+						series: [{
+							data: y,
+							// visible:false,
+							// allowPointSelect:false,
+						}]
+					};
+					// 图表初始化函数
+					var chart = Highcharts.chart('getTop10Ip', options);
+				})
+			}
+			getTop10Ip()
+			window.setInterval(getTop10Ip,5000)
+
+
+			function getAllStatus(){
+				$.get('/getAllStatus ',{},function(msg){
+					jsonObj = JSON.parse(msg)
+					x = []
+					y = []
+
+					$.each(jsonObj,function(i,n){
+						x.push(n._id)
+						y.push(n.total_num)
+					})
+
+					// 图表配置
+					var options ={
+						title:{
+							text:'响应状态',
+						},
+						chart: {
+							type: 'column'
+						},
+						xAxis: {
+							categories: x
+						},
+						yAxis:{
+							title:{
+								text:'响应状态'
+							}
+						},
+						plotOptions: {
+							series: {
+								allowPointSelect: true
+							}
+						},
+						series: [{
+							data: y,
+						}]
+					};
+					// 图表初始化函数
+					var chart = Highcharts.chart('getAllStatus', options);
+				})
+			}
+			getAllStatus()
+			window.setInterval(getAllStatus,5000)
+
+
+		})
+
+	</script>
 </body>
 </html>
