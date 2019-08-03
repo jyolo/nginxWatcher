@@ -146,6 +146,8 @@ class nginxLogWatcher:
         _map['time_int'] = int(time_int)
         _map['web_site'] = _arr[2].strip('')
         _map['ip'] = _arr[3].strip('')
+
+
         ip2location = self.__ipLocation(_map['ip'])
 
         if (ip2location != False):
@@ -211,12 +213,15 @@ class nginxLogWatcher:
             return location
 
         except OSError as e:
+            print(ip)
             traceback.print_exc()
             return False
         except SyntaxError as e:
+            print(ip)
             traceback.print_exc()
             return False
         except BaseException as e:
+            print(ip)
             traceback.print_exc()
             return  False
 
