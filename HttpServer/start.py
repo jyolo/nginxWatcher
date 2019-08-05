@@ -1,5 +1,5 @@
 import time,json,sys,os
-sys.path.append(os.getcwd() + '/../DataBase')
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from DataBase.Mongo import MongoDb
 from flask import Flask ,render_template,request,jsonify,logging
 import multiprocessing
