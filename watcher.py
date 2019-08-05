@@ -17,7 +17,6 @@ class nginxLogWatcher:
         self.dbCollection = 'xfb_online_%s_log' % totday
         self.db = MongoDb(self.dbName, self.dbCollection).db
 
-
         self.logPid()
         self.file_path = logPath;
         self.file = open(logPath ,newline='\n')
@@ -146,7 +145,17 @@ class nginxLogWatcher:
         _map['time_int'] = int(time_int)
         _map['web_site'] = _arr[2].strip('')
         _map['ip'] = _arr[3].strip('')
-        ip2location = self.__ipLocation(_map['ip'])
+        
+        if(len(_map['ip']) < 7) :
+            print('ip匹配错误')
+            return
+
+        try:
+            ip2location = self.__ipLocation(_map['ip'])
+        except OSError as e:
+            print('ip定位失败')
+            ip2location = False
+
 
         if (ip2location != False):
             _map['country'] = ip2location[0]
