@@ -1,4 +1,5 @@
-import time,json
+import time,json,sys,os
+sys.path.append(os.getcwd() + '/../DataBase')
 from DataBase.Mongo import MongoDb
 from flask import Flask ,render_template,request,jsonify,logging
 import multiprocessing
@@ -264,7 +265,7 @@ def getAllIp():
 if __name__ == "__main__":
 
     # analysisa().getTop10IpDetail()
-    app.debug = True
+    app.debug = False
     app.run(host='0.0.0.0')
 
 
