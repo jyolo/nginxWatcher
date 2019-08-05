@@ -145,7 +145,8 @@ class nginxLogWatcher:
         _map['time_int'] = int(time_int)
         _map['web_site'] = _arr[2].strip('')
         _map['ip'] = _arr[3].strip('')
-        
+
+        # ip 异常
         if(len(_map['ip']) < 7) :
             print('ip匹配错误')
             return
