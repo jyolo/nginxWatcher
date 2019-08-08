@@ -23,7 +23,7 @@ class nginxLogWatcher:
 
 
         self.insertData = []
-        self.insertData_max_len = 1000
+        self.insertData_max_len = 100
 
         self.startTailF()
         self.file.close()
