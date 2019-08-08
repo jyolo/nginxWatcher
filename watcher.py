@@ -18,12 +18,12 @@ class nginxLogWatcher:
         self.db = MongoDb(self.dbName, self.dbCollection).db
 
         self.logPid()
-        self.file_path = logPath;
+        self.file_path = logPath
         self.file = open(logPath ,newline='\n')
 
 
         self.insertData = []
-        self.insertData_max_len = 100
+        self.insertData_max_len = 50
 
         self.startTailF()
         self.file.close()
