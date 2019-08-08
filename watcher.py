@@ -97,7 +97,7 @@ class nginxLogWatcher:
 
         # filter static file
         if (re.search(r'\.[js|css|png|jpg|ico|woff]', _arr[6].strip(''))):
-            print('it`s static request')
+            # print('it`s static request')
             return
 
 
