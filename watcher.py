@@ -23,7 +23,7 @@ class nginxLogWatcher:
 
 
         self.insertData = []
-        self.insertData_max_len = 50
+        self.insertData_max_len = 1000
 
         self.startTailF()
         self.file.close()
@@ -42,6 +42,7 @@ class nginxLogWatcher:
             empty_line_time = 0
             while True:
                 time.sleep(0.1)
+
                 line = f.readline()
 
                 # 当前获取不到记录的时候 把文件指针 指向文件头部
@@ -61,9 +62,10 @@ class nginxLogWatcher:
                 totday = time.strftime("%Y_%m_%d", time.localtime(time.time()))
                 self.dbCollection = 'xfb_online_%s_log' % totday
 
-                # print('---------------------------->\n')
+                # print('------------%s---------------->\n' % time.time())
                 # print(line)
-                # print('---------------------------->\n')
+                # print('------------%s---------------->\n' % time.time())
+
                 self.__lineLogToMongo(line )
 
 
@@ -94,82 +96,50 @@ class nginxLogWatcher:
         _arr = line.split(' ')
 
         # filter static file
-        try:
-            if (re.search(r'\.[js|css|png|jpg|ico|woff]', _arr[6].strip(''))):
-                return
-        except BaseException as e:
-            print('not match static file: %s' % line)
-            exit()
+        if (re.search(r'\.[js|css|png|jpg|ico|woff]', _arr[6].strip(''))):
+            print('it`s static request')
+            return
 
 
         _map = {}
 
-        try:
-            request_time = _arr[0].strip('').strip('[')
-            request_time.replace('[','')
+        request_time = _arr[0].strip('').strip('[')
+        request_time.replace('[', '')
 
-            time_int = time.mktime(time.strptime(request_time, "%d/%b/%Y:%H:%M:%S"))
-            time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
-        except BaseException as e:
-            traceback.print_exc()
-            print(_arr[0])
-            print('not match time: %s' % line)
-            exit()
-
-        try:
-            _map['status'] = _arr[8].strip('')
-        except BaseException as e:
-            print('status match error')
-            print(line)
-            print(_arr)
-            _map['status'] = '0'
-            exit()
-
-
-        try:
-            _map['content_size'] = _arr[9].strip('')
-        except BaseException as e:
-            print('content_size match error')
-            _map['content_size'] = ''
-            return
-
-
-        try:
-            _map['referer'] = _arr[10].strip('').strip('"')
-        except BaseException as e:
-            print('refere match error')
-            _map['referer'] = '-'
-            return
+        time_int = time.mktime(time.strptime(request_time, "%d/%b/%Y:%H:%M:%S"))
+        time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
 
         _map['time_str'] = time_str
         _map['time_int'] = int(time_int)
+
+        _map['status'] = _arr[8].strip('')
+        _map['content_size'] = _arr[9].strip('')
+        _map['referer'] = _arr[10].strip('').strip('"')
         _map['web_site'] = _arr[2].strip('')
         _map['ip'] = _arr[3].strip('')
 
-        # ip 异常
-        if(len(_map['ip']) < 7) :
-            print('ip匹配错误')
+        # ip 匹配是否市 合法ip
+        trueIp = re.search(r'(([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])\.){3}([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])', _map['ip'])
+        if(not trueIp):
+            print('ip match error')
             return
 
-        try:
-            ip2location = self.__ipLocation(_map['ip'])
-        except OSError as e:
-            print('ip定位失败')
-            ip2location = False
 
-
-        if (ip2location != False):
+        ip2location = self.__ipLocation(_map['ip'])
+        if (ip2location == False):
+            print('ip2location matcg fail')
+            _map['country'] = ''
+            _map['region'] = ''
+            _map['province'] = ''
+            _map['city'] = ''
+            _map['isp'] = ''
+        else:
             _map['country'] = ip2location[0]
             _map['region'] = ip2location[1]
             _map['province'] = ip2location[2]
             _map['city'] = ip2location[3]
             _map['isp'] = ip2location[4]
-        else:
-            _map['country'] = 0
-            _map['region'] = 0
-            _map['province'] = 0
-            _map['city'] = 0
-            _map['isp'] = 0
+
 
         _map['method'] = _arr[5].strip('').strip('"')
         _map['url'] = _arr[6].strip('')
@@ -197,10 +167,14 @@ class nginxLogWatcher:
             _map['http_x_forwarded_for'] = x_iplist.strip('->')
 
 
-
+        # 数据追加到 列表中
         self.insertData.append(_map)
+
         print(len(self.insertData))
+
+        # 当满足设定的数量 则入库
         if(len(self.insertData) >= self.insertData_max_len):
+
             try:
                 mid = self.db.insert_many(self.insertData)
             except AutoReconnect as e:
@@ -208,11 +182,15 @@ class nginxLogWatcher:
                 mid = self.db.insert_many(self.insertData)
 
             print(mid)
+            # 写入成功后清空数据列表
             self.insertData = []
 
 
+
     def __ipLocation(self,ip):
+
         try:
+
             ipDbPath = './ip2region.db'
             self.ipDb = Ip2Region(ipDbPath)
             ip_result = self.ipDb.binarySearch(ip)
@@ -220,16 +198,13 @@ class nginxLogWatcher:
 
             return location
 
-        except OSError as e:
-            traceback.print_exc()
-            return False
-        except SyntaxError as e:
-            traceback.print_exc()
-            return False
-        except BaseException as e:
-            traceback.print_exc()
+        except Exception as e:
+            print('ip库 定位失败')
+            # traceback.print_exc()
             return  False
 
+    def _putLineToRedis(self ,line):
+        pass
 
 
 
