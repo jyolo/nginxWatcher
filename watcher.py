@@ -71,6 +71,7 @@ class nginxLogWatcher:
                 self.__lineLogToMongo(line )
 
                 if(read_line_total == 10):
+                    print('释放fopen 重新读取文件')
                     empty_line_time = 10
 
 
