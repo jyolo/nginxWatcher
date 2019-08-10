@@ -76,7 +76,8 @@ class nginxLogWatcher:
                     print('释放fopen watting------- %s' % read_line_total)
 
 
-                self.__lineLogToMongo(line )
+                # self.__lineLogToMongo(line )
+                self.__lineToMongo(line)
 
 
 
@@ -90,6 +91,25 @@ class nginxLogWatcher:
             f.write(' %s' % os.getpid())
         f.close()
 
+    def __lineToMongo(self ,line):
+        _map = {}
+        _map['log_line'] = line
+        self.insertData.append(line)
+
+        print(len(self.insertData))
+
+        # 当满足设定的数量 则入库
+        if (len(self.insertData) >= self.insertData_max_len):
+
+            try:
+                mid = self.db.insert_many(self.insertData)
+            except AutoReconnect as e:
+                self.db = MongoDb(self.dbName, self.dbCollection).db
+                mid = self.db.insert_many(self.insertData)
+
+            print(mid)
+            # 写入成功后清空数据列表
+            self.insertData = []
 
     def __lineLogToMongo(self ,line ):
         #####
