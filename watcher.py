@@ -151,20 +151,20 @@ class nginxLogWatcher:
         last_part = line.split(' "')
 
         _map['user_agent'] = last_part[-2].strip('"')
-        _map['http_x_forwarded_for'] = last_part[-1].strip('"')
-
-
-        if(re.search(r'-',_map['http_x_forwarded_for'])):
-            _map['http_x_forwarded_for'] = _map['http_x_forwarded_for'].strip('"')
-        else:
-            iplist = _map['http_x_forwarded_for'].split(',')
-            x_iplist = ''
-            for i in iplist:
-                x_ip = i.strip()
-                ip_result = self.ipDb.binarySearch(x_ip)
-                location = ip_result['region'].decode('utf-8')
-                x_iplist += '%s,%s' % (x_ip ,location) + '->'
-            _map['http_x_forwarded_for'] = x_iplist.strip('->')
+        # _map['http_x_forwarded_for'] = last_part[-1].strip('"')
+        #
+        #
+        # if(re.search(r'-',_map['http_x_forwarded_for'])):
+        #     _map['http_x_forwarded_for'] = _map['http_x_forwarded_for'].strip('"')
+        # else:
+        #     iplist = _map['http_x_forwarded_for'].split(',')
+        #     x_iplist = ''
+        #     for i in iplist:
+        #         x_ip = i.strip()
+        #         ip_result = self.ipDb.binarySearch(x_ip)
+        #         location = ip_result['region'].decode('utf-8')
+        #         x_iplist += '%s,%s' % (x_ip ,location) + '->'
+        #     _map['http_x_forwarded_for'] = x_iplist.strip('->')
 
 
         # 数据追加到 列表中
