@@ -43,7 +43,7 @@ class nginxLogWatcher:
             read_line_total = 0
             while True:
                 time.sleep(0.1)
-                read_line_total = read_line_total + 1
+
 
                 line = f.readline()
 
@@ -67,12 +67,15 @@ class nginxLogWatcher:
                 # print('------------%s---------------->\n' % time.time())
                 # print(line)
                 # print('------------%s---------------->\n' % time.time())
+                read_line_total = read_line_total + 1
+                if (read_line_total == 100):
+                    print('释放fopen 重新读取文件')
+                    print(read_line_total)
+                    empty_line_time = 10
 
                 self.__lineLogToMongo(line )
 
-                if(read_line_total == 10):
-                    print('释放fopen 重新读取文件')
-                    empty_line_time = 10
+
 
 
     # log pid
