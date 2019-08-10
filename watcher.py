@@ -96,9 +96,9 @@ class nginxLogWatcher:
         _arr = line.split(' ')
 
         _map = {}
-        _map['log_line'] = '%s' % '123'
-        
-        self.insertData.append(line)
+        _map['log_line'] = line
+
+        self.insertData.append(_map)
 
         print(len(self.insertData))
 
