@@ -68,11 +68,12 @@ class nginxLogWatcher:
                 # print(line)
                 # print('------------%s---------------->\n' % time.time())
                 read_line_total = read_line_total + 1
-                if (read_line_total == 100):
-                    empty_line_time = 10
-                    print('释放fopen 重新读取文件')
+                if (read_line_total >= 500):
+                    f.close()
+                    self.startTailF()
+                    print('释放fopen start')
                 else:
-                    print('释放fopen 重新读取文件 ----------read_line_total')
+                    print('释放fopen watting')
                     print(read_line_total)
 
                 self.__lineLogToMongo(line )
