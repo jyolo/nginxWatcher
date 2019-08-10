@@ -118,27 +118,27 @@ class nginxLogWatcher:
         _map['web_site'] = _arr[2].strip('')
         _map['ip'] = _arr[3].strip('')
 
-        # ip 匹配是否市 合法ip
-        trueIp = re.search(r'(([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])\.){3}([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])', _map['ip'])
-        if(not trueIp):
-            print('ip match error')
-            return
-
-
-        ip2location = self.__ipLocation(_map['ip'])
-        if (ip2location == False):
-            print('ip2location matcg fail')
-            _map['country'] = ''
-            _map['region'] = ''
-            _map['province'] = ''
-            _map['city'] = ''
-            _map['isp'] = ''
-        else:
-            _map['country'] = ip2location[0]
-            _map['region'] = ip2location[1]
-            _map['province'] = ip2location[2]
-            _map['city'] = ip2location[3]
-            _map['isp'] = ip2location[4]
+        # # ip 匹配是否市 合法ip
+        # trueIp = re.search(r'(([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])\.){3}([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])', _map['ip'])
+        # if(not trueIp):
+        #     print('ip match error')
+        #     return
+        #
+        #
+        # ip2location = self.__ipLocation(_map['ip'])
+        # if (ip2location == False):
+        #     print('ip2location matcg fail')
+        #     _map['country'] = ''
+        #     _map['region'] = ''
+        #     _map['province'] = ''
+        #     _map['city'] = ''
+        #     _map['isp'] = ''
+        # else:
+        #     _map['country'] = ip2location[0]
+        #     _map['region'] = ip2location[1]
+        #     _map['province'] = ip2location[2]
+        #     _map['city'] = ip2location[3]
+        #     _map['isp'] = ip2location[4]
 
 
         _map['method'] = _arr[5].strip('').strip('"')
