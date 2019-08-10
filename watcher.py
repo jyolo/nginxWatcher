@@ -87,10 +87,10 @@ class nginxLogWatcher:
         #'"$http_user_agent" "$http_x_forwarded_for"';
         ####
 
-        if(re.search(r'"\n',line) == None):
-            print('not a line')
-            print(line)
-            return
+        # if(re.search(r'"\n',line) == None):
+        #     print('not a line')
+        #     print(line)
+        #     return
 
         line = line.strip()
         _arr = line.split(' ')
