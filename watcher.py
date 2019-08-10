@@ -93,7 +93,8 @@ class nginxLogWatcher:
 
     def __lineToMongo(self ,line):
         _map = {}
-        _map['log_line'] = line
+        _map['log_line'] = '%s' % line
+        print(_map['log_line'])
         self.insertData.append(line)
 
         print(len(self.insertData))
