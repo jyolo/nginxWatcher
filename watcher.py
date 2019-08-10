@@ -67,6 +67,7 @@ class nginxLogWatcher:
                 # print('------------%s---------------->\n' % time.time())
 
                 self.__lineLogToMongo(line )
+                empty_line_time = 10
 
 
     # log pid
