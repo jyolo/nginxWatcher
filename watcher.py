@@ -40,15 +40,17 @@ class nginxLogWatcher:
             # 打开文件 并把指针指向文件末尾从新读取文件
             # 计数器 可根据网站流量
             empty_line_time = 0
+            read_line_total = 0
             while True:
                 time.sleep(0.1)
+                read_line_total = read_line_total + 1
 
                 line = f.readline()
 
                 # 当前获取不到记录的时候 把文件指针 指向文件头部
                 if(line == ''):
                     print('# 读到空行%s数' % empty_line_time)
-                    time.sleep(0.5)
+                    time.sleep(0.1)
                     if empty_line_time >= 10:
                         print('reopen file waiting for line')
                         f.close()
@@ -67,7 +69,9 @@ class nginxLogWatcher:
                 # print('------------%s---------------->\n' % time.time())
 
                 self.__lineLogToMongo(line )
-               
+
+                if(read_line_total == 10):
+                    empty_line_time = 10
 
 
     # log pid
