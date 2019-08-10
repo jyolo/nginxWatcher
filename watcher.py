@@ -73,8 +73,8 @@ class nginxLogWatcher:
                     f.close()
                     self.startTailF()
                 else:
-                    print('释放fopen watting-------')
-                    print(read_line_total)
+                    print('释放fopen watting------- %s' % read_line_total)
+
 
                 self.__lineLogToMongo(line )
 
