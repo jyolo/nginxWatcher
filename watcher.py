@@ -67,13 +67,15 @@ class nginxLogWatcher:
                 # print('------------%s---------------->\n' % time.time())
                 # print(line)
                 # print('------------%s---------------->\n' % time.time())
-                read_line_total = read_line_total + 1
-                if (read_line_total >= 500):
-                    print('释放fopen start-------')
-                    f.close()
-                    self.startTailF()
-                else:
-                    print('释放fopen watting------- %s' % read_line_total)
+
+                
+                # read_line_total = read_line_total + 1
+                # if (read_line_total >= 500):
+                #     print('释放fopen start-------')
+                #     f.close()
+                #     self.startTailF()
+                # else:
+                #     print('释放fopen watting------- %s' % read_line_total)
 
 
                 # self.__lineLogToMongo(line )
