@@ -1,4 +1,4 @@
-import os,time,re,traceback
+import os,time,re,traceback,os
 from multiprocessing import Pool
 from DataBase.Mongo import MongoDb
 from DataBase.Redis import Redis
@@ -27,12 +27,77 @@ class nginxLogWatcher:
         self.insertData_max_len = 50
 
         if toMongo == False:
-            self.startTailF()
+            self.startTailF2()
+            # self.startTailF()
             self.file.close()
 
+    #  45474
+    #  1829130
+
+    def startTailF2(self):
+
+        # 514368
+        # 1527372
+        start_size = self.get_FileSize(self.file_path)
+
+        with open(self.file_path ,newline="\n") as f:
+
+            f.seek(0,2)
+            while 1:
+                time.sleep(0.1)
+                while_size = self.get_FileSize(self.file_path)
+                print('---%s --%s while continue \n' % (f.tell() ,while_size) )
+
+                # 当日志被切割之后　文件　大小肯定会小于　访问之间的体积
+                if(while_size < start_size):
+                    print('----%s-----%s' % (while_size ,start_size))
+                    time.sleep(1)
+                    f.close() # 释放文件资源
+                    if (getattr(self, 'ipDb') != None):
+                        self.ipDb.close() # 释放ipdb 的　socket
+
+                    self.startTailF2()
 
 
-    def startTailF(self ,cmd = ''):
+                for line in f:
+
+                    print(line )
+
+                    # 当前获取不到记录的时候 把文件指针 指向文件头部
+                    if (line == ''):
+                        print('# 读到空行%s数' % empty_line_time)
+                        time.sleep(0.1)
+                        if empty_line_time >= 10:
+                            print('reopen file waiting for line')
+                            f.close()
+                            if (getattr(self, 'ipDb') != None):
+                                self.ipDb.close()
+                            self.startTailF()
+                        else:
+                            empty_line_time = empty_line_time + 1
+                            continue
+
+                    empty_line_time = 0
+                    # 保持存储集合按天分割
+                    totday = time.strftime("%Y_%m_%d", time.localtime(time.time()))
+                    self.dbCollection = 'xfb_online_%s_log' % totday
+
+                    # print('------------%s---------------->\n' % time.time())
+                    # print(line)
+                    # print('------------%s---------------->\n' % time.time())
+
+                    self.getRedis()
+                    flag = self.redis.lpush(self.list_key, line)
+                    print(flag)
+
+
+
+    def get_FileSize(self ,filePath):
+        fsize = os.path.getsize(filePath)
+        fsize = fsize / float(1024 * 1024)
+        return round(fsize, 2)
+
+    def startTailF(self ):
 
         with open(self.file_path,'r+' ,newline='\n') as f:
 
@@ -43,8 +108,8 @@ class nginxLogWatcher:
             # 计数器 可根据网站流量
             empty_line_time = 0
             read_line_total = 0
-            while True:
-                time.sleep(0.1)
+            while 1:
+                time.sleep(0.01)
                 line = f.readline()
 
                 # 当前获取不到记录的时候 把文件指针 指向文件头部
@@ -287,16 +352,16 @@ if __name__ == "__main__":
             else:
 
 
-                pollNum = 2
-                poll = Pool(pollNum)
-
-                for i in range(pollNum):
-                    poll.apply_async(lineToMongo ,args=(logPath,))
-
+                # pollNum = 2
+                # poll = Pool(pollNum)
+                #
+                # for i in range(pollNum):
+                #     poll.apply_async(lineToMongo ,args=(logPath,))
+                #
                 startWatcher(logPath)
-
-                poll.close()
-                poll.join()
+                #
+                # poll.close()
+                # poll.join()
 
 
 
