@@ -11,11 +11,7 @@ class nginxLogWatcher:
         if(os.path.exists(logPath) == False):
             raise FileNotFoundError('logfile is not exsits')
 
-        totday  = time.strftime("%Y_%m_%d", time.localtime(time.time()))
 
-        self.dbName = 'xfb'
-        self.dbCollection = 'xfb_online_%s_log' % totday
-        self.db = MongoDb(self.dbName, self.dbCollection).db
 
         self.logPid()
         self.file_path = logPath
@@ -54,6 +50,7 @@ class nginxLogWatcher:
                     if empty_line_time >= 10:
                         print('reopen file waiting for line')
                         f.close()
+                        self.ipDb.close()
                         self.startTailF()
                     else:
                         empty_line_time = empty_line_time + 1
@@ -78,8 +75,8 @@ class nginxLogWatcher:
                 #     print('释放fopen watting------- %s' % read_line_total)
 
 
-                # self.__lineLogToMongo(line )
-                self.__lineToMongo(line)
+                self.__lineLogToMongo(line )
+                # self.__lineToMongo(line)
 
 
 
@@ -146,6 +143,8 @@ class nginxLogWatcher:
 
         time_int = time.mktime(time.strptime(request_time, "%d/%b/%Y:%H:%M:%S"))
         time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
+        mongodbCollection = time_str.split(' ')[0]
+        print(mongodbCollection)
 
         _map['time_str'] = time_str
         _map['time_int'] = int(time_int)
@@ -156,27 +155,27 @@ class nginxLogWatcher:
         _map['web_site'] = _arr[2].strip('')
         _map['ip'] = _arr[3].strip('')
 
-        # # ip 匹配是否市 合法ip
-        # trueIp = re.search(r'(([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])\.){3}([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])', _map['ip'])
-        # if(not trueIp):
-        #     print('ip match error')
-        #     return
-        #
-        #
-        # ip2location = self.__ipLocation(_map['ip'])
-        # if (ip2location == False):
-        #     print('ip2location matcg fail')
-        #     _map['country'] = ''
-        #     _map['region'] = ''
-        #     _map['province'] = ''
-        #     _map['city'] = ''
-        #     _map['isp'] = ''
-        # else:
-        #     _map['country'] = ip2location[0]
-        #     _map['region'] = ip2location[1]
-        #     _map['province'] = ip2location[2]
-        #     _map['city'] = ip2location[3]
-        #     _map['isp'] = ip2location[4]
+        # ip 匹配是否市 合法ip
+        trueIp = re.search(r'(([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])\.){3}([01]{0,1}\d{0,1}\d|2[0-4]\d|25[0-5])', _map['ip'])
+        if(not trueIp):
+            print('ip match error')
+            return
+
+
+        ip2location = self.__ipLocation(_map['ip'])
+        if (ip2location == False):
+            print('ip2location matcg fail')
+            _map['country'] = ''
+            _map['region'] = ''
+            _map['province'] = ''
+            _map['city'] = ''
+            _map['isp'] = ''
+        else:
+            _map['country'] = ip2location[0]
+            _map['region'] = ip2location[1]
+            _map['province'] = ip2location[2]
+            _map['city'] = ip2location[3]
+            _map['isp'] = ip2location[4]
 
 
         _map['method'] = _arr[5].strip('').strip('"')
@@ -213,11 +212,19 @@ class nginxLogWatcher:
         # 当满足设定的数量 则入库
         if(len(self.insertData) >= self.insertData_max_len):
 
+            db = self.__getMongoDB(mongodbCollection)
+
+            # try:
+            #     mid = self.db.insert_many(self.insertData)
+            # except AutoReconnect as e:
+            #     self.db = MongoDb(self.dbName, self.dbCollection).db
+            #     mid = self.db.insert_many(self.insertData)
             try:
-                mid = self.db.insert_many(self.insertData)
+                mid = db.insert_many(self.insertData)
             except AutoReconnect as e:
-                self.db = MongoDb(self.dbName, self.dbCollection).db
-                mid = self.db.insert_many(self.insertData)
+                db = self.__getMongoDB(mongodbCollection)
+                mid = db.insert_many(self.insertData)
+
 
             print(mid)
             # 写入成功后清空数据列表
@@ -241,7 +248,18 @@ class nginxLogWatcher:
             # traceback.print_exc()
             return  False
 
-    def _putLineToRedis(self ,line):
+    def __getMongoDB(self ,collection):
+
+        # totday = time.strftime("%Y_%m_%d", time.localtime(time.time()))
+        # self.dbName = 'xfb'
+        # self.dbCollection = 'xfb_online_%s_log' % totday
+        # self.db = MongoDb(self.dbName, self.dbCollection).db
+
+
+        dbName = 'xfb'
+        return MongoDb(dbName, collection).db
+
+
         pass
 
 
