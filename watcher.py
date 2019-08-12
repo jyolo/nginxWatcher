@@ -255,9 +255,9 @@ class nginxLogWatcher:
         # self.dbCollection = 'xfb_online_%s_log' % totday
         # self.db = MongoDb(self.dbName, self.dbCollection).db
 
-
+        dbCollection = 'xfb_online_%s_log' % collection
         dbName = 'xfb'
-        return MongoDb(dbName, collection).db
+        return MongoDb(dbName, dbCollection).db
 
 
         pass
