@@ -352,16 +352,16 @@ if __name__ == "__main__":
             else:
 
 
-                # pollNum = 2
-                # poll = Pool(pollNum)
-                #
-                # for i in range(pollNum):
-                #     poll.apply_async(lineToMongo ,args=(logPath,))
+                pollNum = 2
+                poll = Pool(pollNum)
+
+                for i in range(pollNum):
+                    poll.apply_async(lineToMongo ,args=(logPath,))
                 #
                 startWatcher(logPath)
                 #
-                # poll.close()
-                # poll.join()
+                poll.close()
+                poll.join()
 
 
 
