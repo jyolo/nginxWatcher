@@ -46,11 +46,11 @@ class nginxLogWatcher:
             while 1:
                 time.sleep(0.1)
                 while_size = self.get_FileSize(self.file_path)
-                print('---%s --%s while continue \n' % (f.tell() ,while_size) )
+                # print('---%s --%s while continue \n' % (f.tell() ,while_size) )
 
                 # 当日志被切割之后　文件　大小肯定会小于　访问之间的体积
                 if(while_size < start_size):
-                    print('----%s-----%s' % (while_size ,start_size))
+                    # print('----%s-----%s' % (while_size ,start_size))
                     time.sleep(1)
                     f.close() # 释放文件资源
                     if (getattr(self, 'ipDb') != None):
@@ -61,7 +61,7 @@ class nginxLogWatcher:
 
                 for line in f:
 
-                    print(line )
+                    # print(line )
 
                     # 当前获取不到记录的时候 把文件指针 指向文件头部
                     if (line == ''):
@@ -319,6 +319,7 @@ def startWatcher(logpath):
     nginxLogWatcher(logpath)
 
 def lineToMongo(logpath):
+    # 新对象　用于双线程　pop　队列中的数据　入库
     obj = nginxLogWatcher(logpath ,toMongo=True)
 
     while True:
