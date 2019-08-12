@@ -1,12 +1,13 @@
-import os,time,re,traceback,sys,subprocess
-import multiprocessing
+import os,time,re,traceback
+from multiprocessing import Pool
 from DataBase.Mongo import MongoDb
+from DataBase.Redis import Redis
 from pymongo.errors import *
 from ip2Region import Ip2Region
 
 class nginxLogWatcher:
 
-    def __init__(self ,logPath):
+    def __init__(self ,logPath ,toMongo = False):
         print('--start time : %s' % time.time())
         if(os.path.exists(logPath) == False):
             raise FileNotFoundError('logfile is not exsits')
@@ -16,13 +17,18 @@ class nginxLogWatcher:
         self.logPid()
         self.file_path = logPath
         self.file = open(logPath ,newline='\n')
+        self.ipDb = None
+        self.redisDbNum = 3
+        self.list_key = 'nginx_log'
+        self.redis = False
 
 
         self.insertData = []
         self.insertData_max_len = 50
 
-        self.startTailF()
-        self.file.close()
+        if toMongo == False:
+            self.startTailF()
+            self.file.close()
 
 
 
@@ -39,8 +45,6 @@ class nginxLogWatcher:
             read_line_total = 0
             while True:
                 time.sleep(0.1)
-
-
                 line = f.readline()
 
                 # 当前获取不到记录的时候 把文件指针 指向文件头部
@@ -50,11 +54,12 @@ class nginxLogWatcher:
                     if empty_line_time >= 10:
                         print('reopen file waiting for line')
                         f.close()
-                        self.ipDb.close()
+                        if(getattr(self,'ipDb') != None):
+                            self.ipDb.close()
                         self.startTailF()
                     else:
                         empty_line_time = empty_line_time + 1
-                    continue
+                        continue
 
                 empty_line_time = 0
                 # 保持存储集合按天分割
@@ -66,16 +71,11 @@ class nginxLogWatcher:
                 # print('------------%s---------------->\n' % time.time())
 
                 
-                # read_line_total = read_line_total + 1
-                # if (read_line_total >= 500):
-                #     print('释放fopen start-------')
-                #     f.close()
-                #     self.startTailF()
-                # else:
-                #     print('释放fopen watting------- %s' % read_line_total)
 
-
-                self.__lineLogToMongo(line )
+                self.getRedis()
+                flag = self.redis.lpush(self.list_key, line)
+                print(flag)
+                # self.__lineLogToMongo(line )
                 # self.__lineToMongo(line)
 
 
@@ -90,31 +90,8 @@ class nginxLogWatcher:
             f.write(' %s' % os.getpid())
         f.close()
 
-    def __lineToMongo(self ,line):
-        line = line.strip()
-        _arr = line.split(' ')
 
-        _map = {}
-        _map['log_line'] = line
-
-        self.insertData.append(_map)
-
-        print(len(self.insertData))
-
-        # 当满足设定的数量 则入库
-        if (len(self.insertData) >= self.insertData_max_len):
-
-            try:
-                mid = self.db.insert_many(self.insertData)
-            except AutoReconnect as e:
-                self.db = MongoDb(self.dbName, self.dbCollection).db
-                mid = self.db.insert_many(self.insertData)
-
-            print(mid)
-            # 写入成功后清空数据列表
-            self.insertData = []
-
-    def __lineLogToMongo(self ,line ):
+    def lineLogToMongo(self ,line ):
         #####
         # nginx log format
         #'[$time_local] $host $remote_addr - "$request" '
@@ -231,6 +208,15 @@ class nginxLogWatcher:
             self.insertData = []
 
 
+    def getRedis(self):
+
+        if (self.redis == False):
+            try:
+                self.redis = Redis(self.redisDbNum).db
+            except BaseException as e:
+                print('redis init error')
+
+        return self.redis
 
     def __ipLocation(self,ip):
 
@@ -267,6 +253,18 @@ class nginxLogWatcher:
 def startWatcher(logpath):
     nginxLogWatcher(logpath)
 
+def lineToMongo(logpath):
+    obj = nginxLogWatcher(logpath ,toMongo=True)
+
+    while True:
+
+        line = obj.getRedis().lpop(obj.list_key)
+        if(not line ):
+            time.sleep(0.5)
+            print('wait for redis list')
+            continue
+        obj.lineLogToMongo(line)
+    pass
 
 
 if __name__ == "__main__":
@@ -287,7 +285,21 @@ if __name__ == "__main__":
             if(os.path.exists(logPath) == False):
                 print('logpath is not exists : %s' % logPath)
             else:
+
+
+                pollNum = 2
+                poll = Pool(pollNum)
+
+                for i in range(pollNum):
+                    poll.apply_async(lineToMongo ,args=(logPath,))
+
                 startWatcher(logPath)
+
+                poll.close()
+                poll.join()
+
+
+
                 # watch = multiprocessing.Process(target=startWatcher ,args=(logPath,))
                 # # watch.daemon = True
                 # watch.start()
