@@ -13,7 +13,7 @@ class MongoDb(Model):
         # if(self.db == False):
 
         if len(self.getConfig()['username']) == 0   and len(self.getConfig()['password']) == 0:
-            self.Connecter = MongoClient(host=self.getConfig()['host'] ,port= int(self.getConfig()['port'])  ,connectTimeoutMS = 5)
+            self.Connecter = MongoClient(host=self.getConfig()['host'] ,port= int(self.getConfig()['port'])  ,connectTimeoutMS = 5 ,serverSelectionTimeoutMS=10)
         else:
             url = "mongodb://%s:%s@%s:%s/%s" % (
                 quote_plus(self.getConfig()['username']),
@@ -22,7 +22,7 @@ class MongoDb(Model):
                 self.getConfig()['port'],
                 quote_plus(self.getConfig()['database'])
             )
-            self.Connecter = MongoClient(url ,connectTimeoutMS = 5)
+            self.Connecter = MongoClient(url ,connectTimeoutMS = 5 ,serverSelectionTimeoutMS = 10)
 
 
         self.db = self.Connecter[tableName][collectionName]

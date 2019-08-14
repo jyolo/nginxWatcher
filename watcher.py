@@ -2,149 +2,81 @@ import os,time,re,traceback,os
 from multiprocessing import Pool
 from DataBase.Mongo import MongoDb
 from DataBase.Redis import Redis
+from redis.exceptions import RedisError
+from pymongo.errors import PyMongoError
 from pymongo.errors import *
 from ip2Region import Ip2Region
 
-class nginxLogWatcher:
+"""
+python nginxWatcher -f _logpath 
+"""
 
-    def __init__(self ,logPath ,toMongo = False):
-        print('--start time : %s' % time.time())
-        if(os.path.exists(logPath) == False):
+
+class Base:
+
+    def __init__(self ,logPath):
+
+        if (os.path.exists(logPath) == False):
             raise FileNotFoundError('logfile is not exsits')
+        self.logPath = logPath
 
-
-
-        self.logPid()
-        self.file_path = logPath
-        self.file = open(logPath ,newline='\n')
-        self.ipDb = None
+        # redis
+        self.redis = None
         self.redisDbNum = 3
-        self.list_key = 'nginx_log'
-        self.redis = False
+        self.listKey = logPath.split('/')[-1].replace('.', '_')
+        self.emptyLineMaxTime = 10
 
-
+        # mongodb
+        self.mongodb = None
+        self.dbName = 'xfb'
+        self.dbCollection = None
         self.insertData = []
-        self.insertData_max_len = 50
-
-        if toMongo == False:
-            self.startTailF2()
-            # self.startTailF()
-            self.file.close()
-
-    #  45474
-    #  1829130
-
-    def startTailF2(self):
-
-        # 514368
-        # 1527372
-        start_size = self.get_FileSize(self.file_path)
-
-        with open(self.file_path ,newline="\n") as f:
-
-            f.seek(0,2)
-            while 1:
-                time.sleep(0.1)
-                while_size = self.get_FileSize(self.file_path)
-                # print('---%s --%s while continue \n' % (f.tell() ,while_size) )
-
-                # 当日志被切割之后　文件　大小肯定会小于　访问之间的体积
-                if(while_size < start_size):
-                    # print('----%s-----%s' % (while_size ,start_size))
-                    time.sleep(1)
-                    f.close() # 释放文件资源
-                    if (getattr(self, 'ipDb') != None):
-                        self.ipDb.close() # 释放ipdb 的　socket
-
-                    self.startTailF2()
-
-
-                for line in f:
-
-                    # print(line )
-
-                    # 当前获取不到记录的时候 把文件指针 指向文件头部
-                    if (line == ''):
-                        print('# 读到空行%s数' % empty_line_time)
-                        time.sleep(0.1)
-                        if empty_line_time >= 10:
-                            print('reopen file waiting for line')
-                            f.close()
-                            if (getattr(self, 'ipDb') != None):
-                                self.ipDb.close()
-                            self.startTailF()
-                        else:
-                            empty_line_time = empty_line_time + 1
-                            continue
-
-                    empty_line_time = 0
-                    # 保持存储集合按天分割
-                    totday = time.strftime("%Y_%m_%d", time.localtime(time.time()))
-                    self.dbCollection = 'xfb_online_%s_log' % totday
-
-                    # print('------------%s---------------->\n' % time.time())
-                    # print(line)
-                    # print('------------%s---------------->\n' % time.time())
-
-                    self.getRedis()
-                    flag = self.redis.lpush(self.list_key, line)
-                    print(flag)
+        self.insertDataMaxLen = 50
 
 
 
-    def get_FileSize(self ,filePath):
-        fsize = os.path.getsize(filePath)
-        fsize = fsize / float(1024 * 1024)
-        return round(fsize, 2)
-
-    def startTailF(self ):
-
-        with open(self.file_path,'r+' ,newline='\n') as f:
-
-            f.seek(0, 2)
-            # 当文件被切割或者文件被修改过后 由于 文件指针已经被改变 会始终读取不到数据
-            # empty_line_time 为计数器，当始终无法获取数据 超过一定次数 则关闭文件句柄 从新
-            # 打开文件 并把指针指向文件末尾从新读取文件
-            # 计数器 可根据网站流量
-            empty_line_time = 0
-            read_line_total = 0
-            while 1:
-                time.sleep(0.01)
-                line = f.readline()
-
-                # 当前获取不到记录的时候 把文件指针 指向文件头部
-                if(line == ''):
-                    print('# 读到空行%s数' % empty_line_time)
-                    time.sleep(0.1)
-                    if empty_line_time >= 10:
-                        print('reopen file waiting for line')
-                        f.close()
-                        if(getattr(self,'ipDb') != None):
-                            self.ipDb.close()
-                        self.startTailF()
-                    else:
-                        empty_line_time = empty_line_time + 1
-                        continue
-
-                empty_line_time = 0
-                # 保持存储集合按天分割
-                totday = time.strftime("%Y_%m_%d", time.localtime(time.time()))
-                self.dbCollection = 'xfb_online_%s_log' % totday
-
-                # print('------------%s---------------->\n' % time.time())
-                # print(line)
-                # print('------------%s---------------->\n' % time.time())
-
-                
-
-                self.getRedis()
-                flag = self.redis.lpush(self.list_key, line)
-                print(flag)
-                # self.__lineLogToMongo(line )
-                # self.__lineToMongo(line)
 
 
+    def getRedis(self):
 
+        if (self.redis == None):
+            try:
+                print('init redis')
+                self.redis = Redis(self.redisDbNum).db
+            except Exception as e:
+                traceback.print_exc()
+                exit(0)
+
+
+        return self.redis
+
+    def getMongoDB(self ,log_date_format):
+        collection = self.listKey + '_%s' % log_date_format
+        change_days = (self.dbCollection == collection)
+
+        if(self.mongodb == None or change_days == False):
+            print('init mongodb')
+            self.dbCollection = collection
+            self.mongodb = MongoDb(self.dbName, self.dbCollection).db
+
+
+        return self.mongodb
+
+    def ipLocation(self,ip):
+
+        try:
+
+            ipDbPath = './ip2region.db'
+            self.ipDb = Ip2Region(ipDbPath)
+            ip_result = self.ipDb.binarySearch(ip)
+            location = ip_result['region'].decode('utf-8').split('|')
+
+            return location
+
+        except Exception as e:
+            print('ip库 定位失败')
+            # traceback.print_exc()
+            return  False
 
     # log pid
     def logPid(self ,readType = 'w+'):
@@ -155,6 +87,108 @@ class nginxLogWatcher:
             f.write(' %s' % os.getpid())
         f.close()
 
+    def get_FileSize(self ,filePath):
+        fsize = os.path.getsize(filePath)
+        fsize = fsize / float(1024 * 1024)
+        return round(fsize, 2)
+
+
+class nginxLogWatcher(Base):
+
+
+    def startTailf(self):
+
+        with open(self.logPath, newline="\n") as f:
+            emptyTimes = 0
+            redisRtryTimes = 0
+            f.seek(0, 2)
+            while 1:
+                try:
+                    time.sleep(0.1)
+                    for line in f:
+                        emptyTimes = 0
+                        flag = (self.getRedis()).lpush(self.listKey, line)
+                        #print(flag)
+
+                    """
+                    文件没有内容的时候　不进入　for in 中　则　raise StopIteration　错误　
+                    循环尝试超过　指定次数后　则关闭文件从新打开文件
+                    """
+                    raise StopIteration('暂无数据')
+
+                except StopIteration as e:
+                    emptyTimes = emptyTimes + 1
+                    if (emptyTimes == 1):
+                        continue
+
+                    if(emptyTimes >= self.emptyLineMaxTime):
+                        time.sleep(1)
+                        f.close()
+                        self.startTailf()
+                    else:
+
+                        time.sleep(0.1)
+                        print('empty line %s time' % emptyTimes)
+
+
+                except RedisError as e:
+                    redisRtryTimes = redisRtryTimes + 1
+                    self.redis = None
+                    time.sleep(1)
+                    # redis 报错之后　程序挂机一直尝试
+                    print('redis error retrying %s times' % redisRtryTimes)
+                    if(redisRtryTimes >= 100):
+                        print('retry over 100 times proccess exit')
+                        exit(0)
+
+                except Exception as e:
+                    # 其它未知错误　直接退出
+                    traceback.print_exc()
+                    exit(0)
+
+
+class logWriter(Base):
+
+
+    def start(self):
+        redisRtryTimes = 0
+        mongodbRtryTimes = 0
+
+        while 1:
+
+            try:
+
+                time.sleep(0.1)
+                line = (self.getRedis()).lpop(self.listKey)
+                if(line == None):
+                    time.sleep(1)
+                    print('pid : %s waiting for line data' % os.getpid())
+                    continue
+
+                self.lineLogToMongo(line)
+                # 重试次数归零
+                redisRtryTimes = 0
+                mongodbRtryTimes = 0
+
+            except RedisError as e:
+                redisRtryTimes = redisRtryTimes + 1
+                self.redis = None
+                time.sleep(1)
+                # redis 报错之后　会一直重试知道超出重试值
+                print('redis error retrying %s times' % redisRtryTimes)
+                if (redisRtryTimes >= 100):
+                    print('retry over 100 times proccess exit')
+                    exit(0)
+            except PyMongoError as e:
+                mongodbRtryTimes = mongodbRtryTimes + 1
+                self.mongodb = None
+                time.sleep(1)
+                # mongodb 报错之后　程序挂机一直尝试
+                print('mongodb error retrying %s times' % mongodbRtryTimes)
+                if (mongodbRtryTimes >= 100):
+                    print('retry over 100 times proccess exit')
+                    exit(0)
+
 
     def lineLogToMongo(self ,line ):
         #####
@@ -164,11 +198,6 @@ class nginxLogWatcher:
         #'"$http_user_agent" "$http_x_forwarded_for"';
         ####
 
-        # if(re.search(r'"\n',line) == None):
-        #     print('not a line')
-        #     print(line)
-        #     return
-
         line = line.strip()
         _arr = line.split(' ')
 
@@ -177,16 +206,12 @@ class nginxLogWatcher:
             # print('it`s static request')
             return
 
-
         _map = {}
-
         request_time = _arr[0].strip('').strip('[')
         request_time.replace('[', '')
 
         time_int = time.mktime(time.strptime(request_time, "%d/%b/%Y:%H:%M:%S"))
         time_str = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(time_int)))
-        mongodbCollection = time_str.split(' ')[0]
-        print(mongodbCollection)
 
         _map['time_str'] = time_str
         _map['time_int'] = int(time_int)
@@ -204,7 +229,7 @@ class nginxLogWatcher:
             return
 
 
-        ip2location = self.__ipLocation(_map['ip'])
+        ip2location = self.ipLocation(_map['ip'])
         if (ip2location == False):
             print('ip2location matcg fail')
             _map['country'] = ''
@@ -249,133 +274,55 @@ class nginxLogWatcher:
         # 数据追加到 列表中
         self.insertData.append(_map)
 
-        print(len(self.insertData))
+        # print(len(self.insertData))
 
         # 当满足设定的数量 则入库
-        if(len(self.insertData) >= self.insertData_max_len):
+        if(len(self.insertData) >= self.insertDataMaxLen):
 
-            db = self.__getMongoDB(mongodbCollection)
+            Collection = time_str.split(' ')[0]
+            mid = (self.getMongoDB(Collection)).insert_many(self.insertData)
+            if(mid):
+                print('pid: %s insert success' % os.getpid())
 
-            # try:
-            #     mid = self.db.insert_many(self.insertData)
-            # except AutoReconnect as e:
-            #     self.db = MongoDb(self.dbName, self.dbCollection).db
-            #     mid = self.db.insert_many(self.insertData)
-            try:
-                mid = db.insert_many(self.insertData)
-            except AutoReconnect as e:
-                db = self.__getMongoDB(mongodbCollection)
-                mid = db.insert_many(self.insertData)
-
-
-            print(mid)
             # 写入成功后清空数据列表
             self.insertData = []
 
 
-    def getRedis(self):
 
-        if (self.redis == False):
-            try:
-                self.redis = Redis(self.redisDbNum).db
-            except BaseException as e:
-                print('redis init error')
+def watcher(logpath):
+    nginxLogWatcher(logPath).startTailf()
 
-        return self.redis
-
-    def __ipLocation(self,ip):
-
-        try:
-
-            ipDbPath = './ip2region.db'
-            self.ipDb = Ip2Region(ipDbPath)
-            ip_result = self.ipDb.binarySearch(ip)
-            location = ip_result['region'].decode('utf-8').split('|')
-
-            return location
-
-        except Exception as e:
-            print('ip库 定位失败')
-            # traceback.print_exc()
-            return  False
-
-    def __getMongoDB(self ,collection):
-
-        # totday = time.strftime("%Y_%m_%d", time.localtime(time.time()))
-        # self.dbName = 'xfb'
-        # self.dbCollection = 'xfb_online_%s_log' % totday
-        # self.db = MongoDb(self.dbName, self.dbCollection).db
-
-        dbCollection = 'xfb_online_%s_log' % collection
-        dbName = 'xfb'
-        return MongoDb(dbName, dbCollection).db
-
-
-        pass
-
-
-
-def startWatcher(logpath):
-    nginxLogWatcher(logpath)
-
-def lineToMongo(logpath):
-    # 新对象　用于双线程　pop　队列中的数据　入库
-    obj = nginxLogWatcher(logpath ,toMongo=True)
-
-    while True:
-
-        line = obj.getRedis().lpop(obj.list_key)
-        if(not line ):
-            time.sleep(0.5)
-            print('wait for redis list')
-            continue
-        obj.lineLogToMongo(line)
-    pass
+def writer(logpath):
+    logWriter(logpath).start()
 
 
 if __name__ == "__main__":
-    # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\tt.log'
-    # logPath = 'G:\\MyPythonProject\\nginxWatcher\\log\\xfb.log'
-    # logPath = '/alidata/server/nginx/logs/xfb.log'
-    # reader(logPath)
-
-    # start_cmd = 'nohup python3 -u watcher.py -f  %s > nohup.out  2>&1 &'
-    # start_cmd = 'python3  /mnt/hgfs/MyPythonProject/nginxWatcher/watcher.py -f  %s '
-    # stop_cmd = 'python3 stopWatcher.py'
 
     try:
-        commond = sys.argv[1]
+        path_commond = sys.argv[1]
 
-        if (commond == '-f'):
+        if (path_commond == '-f'):
             logPath = sys.argv[2]
-            if(os.path.exists(logPath) == False):
-                print('logpath is not exists : %s' % logPath)
-            else:
+        if(os.path.exists(logPath) == False):
+            print('logpath is not exists : %s' % logPath)
 
 
-                pollNum = 2
-                poll = Pool(pollNum)
+        print(logPath)
 
-                for i in range(pollNum):
-                    poll.apply_async(lineToMongo ,args=(logPath,))
-                #
-                startWatcher(logPath)
-                #
-                poll.close()
-                poll.join()
+        pollNum = 2
+        poll = Pool(pollNum)
+
+        for i in range(pollNum):
+            poll.apply_async(writer ,args=(logPath,))
 
 
+        watcher(logPath)
 
-                # watch = multiprocessing.Process(target=startWatcher ,args=(logPath,))
-                # # watch.daemon = True
-                # watch.start()
-                #
-                # # nginxLogWatcher(logPath)
-                # while 1:
-                #     print(watch.pid)
-                #     # if(watch.is_alive() == False):
-                #     print(watch.is_alive())
-                #     time.sleep(2)
+        poll.close()
+        poll.join()
+
+
+
 
 
     except IndexError as e:
