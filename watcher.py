@@ -14,11 +14,13 @@ python nginxWatcher -f _logpath
 
 class Base:
 
-    def __init__(self ,logPath):
+    def __init__(self ,logPath =''):
 
-        if (os.path.exists(logPath) == False):
-            raise FileNotFoundError('logfile is not exsits')
-        self.logPath = logPath
+        if(self.__class__.__name__ == 'Reader'):
+            if (os.path.exists(logPath) == False):
+                raise FileNotFoundError('logfile is not exsits')
+            self.logPath = logPath
+
 
         # redis
         self.redis = None
@@ -93,7 +95,7 @@ class Base:
         return round(fsize, 2)
 
 
-class nginxLogWatcher(Base):
+class Reader(Base):
 
 
     def startTailf(self):
@@ -147,7 +149,9 @@ class nginxLogWatcher(Base):
                     exit(0)
 
 
-class logWriter(Base):
+class Writer(Base):
+    def __init__(self):
+        super().__init__('')
 
 
     def start(self):
@@ -289,11 +293,11 @@ class logWriter(Base):
 
 
 
-def watcher(logpath):
-    nginxLogWatcher(logPath).startTailf()
+def read(logpath):
+    Reader(logPath).startTailf()
 
-def writer(logpath):
-    logWriter(logpath).start()
+def write():
+    Writer().start()
 
 
 if __name__ == "__main__":
@@ -301,33 +305,71 @@ if __name__ == "__main__":
     try:
         path_commond = sys.argv[1]
 
+        if ('-m' in sys.argv):
+            runModel = sys.argv[ sys.argv.index('-m') + 1 ].strip()
+
+            if(runModel not in ['read' ,'write','both']):
+                raise IndexError('未匹配到命令')
+        else:
+            runModel = 'both'
+
+        if('-p' in sys.argv):
+            writerProccessNum = sys.argv[ sys.argv.index('-p') + 1 ].strip()
+            writerProccessNum = int(writerProccessNum)
+        else:
+            writerProccessNum = 2
+
+
         if (path_commond == '-f'):
             logPath = sys.argv[2]
         if(os.path.exists(logPath) == False):
             print('logpath is not exists : %s' % logPath)
 
+        """
+        按照模式运行
+        """
+        if(runModel == 'both'):
 
-        print(logPath)
+            pollNum = writerProccessNum
+            poll = Pool(pollNum)
 
-        pollNum = 2
-        poll = Pool(pollNum)
+            for i in range(pollNum):
+                poll.apply_async(write)
 
-        for i in range(pollNum):
-            poll.apply_async(writer ,args=(logPath,))
+            read(logPath)
 
-
-        watcher(logPath)
-
-        poll.close()
-        poll.join()
-
-
-
+            poll.close()
+            poll.join()
 
 
-    except IndexError as e:
+        elif(runModel == 'read'):
+            read(logPath)
+
+        elif(runModel == 'write'):
+
+            pollNum = writerProccessNum
+            poll = Pool(pollNum)
+
+            for i in range(pollNum):
+                poll.apply_async(write)
+
+            poll.close()
+            poll.join()
+            pass
+
+
+
+    except Exception as e:
         traceback.print_exc()
-        print('args error : for example \n')
-        print('    python readLogpy support args : \n')
-        print('    -f  /server/nginx/logs/yourlog.log \n')
+        print('-----------------------------------doc----------------------------------- ')
+        print('| args  : ')
+        print('|    support args : ')
+        print('|    -f  your access.log path  ')
+        print('|    -m  run model -m [read | write | both]  ')
+        print('|    -p  writer Proccess Number  ')
+        print('| only read log; for example: python3 -u watcher.py -f  /wwwlogs/access.log -m read   ')
+        print('| only write log; for example: python3 -u watcher.py -f  /wwwlogs/access.log -m write -p 4   ')
+        print('| read and write log; for example: python3 -u watcher.py -f  /wwwlogs/access.log [ -m both -p 2]   ')
+        print('-----------------------------------doc----------------------------------- ')
+
 
