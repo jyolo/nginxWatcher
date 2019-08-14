@@ -14,18 +14,22 @@ python nginxWatcher -f _logpath
 
 class Base:
 
-    def __init__(self ,logPath =''):
+    def __init__(self ,logPath):
 
         if(self.__class__.__name__ == 'Reader'):
             if (os.path.exists(logPath) == False):
                 raise FileNotFoundError('logfile is not exsits')
             self.logPath = logPath
+            self.listKey = logPath.split('/')[-1].replace('.', '_')
+        else:
+            self.logPath = logPath
+            self.listKey = self.logPath.replace('.', '_')
+
 
 
         # redis
         self.redis = None
         self.redisDbNum = 3
-        self.listKey = logPath.split('/')[-1].replace('.', '_')
         self.emptyLineMaxTime = 10
 
         # mongodb
@@ -150,16 +154,12 @@ class Reader(Base):
 
 
 class Writer(Base):
-    def __init__(self):
-        super().__init__('')
-
 
     def start(self):
         redisRtryTimes = 0
         mongodbRtryTimes = 0
 
         while 1:
-
             try:
 
                 time.sleep(0.1)
@@ -293,11 +293,12 @@ class Writer(Base):
 
 
 
-def read(logpath):
+def read(logPath):
     Reader(logPath).startTailf()
 
-def write():
-    Writer().start()
+def write(logFileName):
+
+    Writer(logFileName).start()
 
 
 if __name__ == "__main__":
@@ -322,8 +323,7 @@ if __name__ == "__main__":
 
         if (path_commond == '-f'):
             logPath = sys.argv[2]
-        if(os.path.exists(logPath) == False):
-            print('logpath is not exists : %s' % logPath)
+
 
         """
         按照模式运行
@@ -334,7 +334,7 @@ if __name__ == "__main__":
             poll = Pool(pollNum)
 
             for i in range(pollNum):
-                poll.apply_async(write)
+                poll.apply_async(write,args=(logPath,))
 
             read(logPath)
 
@@ -351,11 +351,11 @@ if __name__ == "__main__":
             poll = Pool(pollNum)
 
             for i in range(pollNum):
-                poll.apply_async(write)
+                poll.apply_async(write,args=(logPath,))
 
             poll.close()
             poll.join()
-            pass
+
 
 
 
