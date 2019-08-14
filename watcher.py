@@ -1,10 +1,9 @@
-import os,time,re,traceback,os
+import time,re,traceback,os,sys
 from multiprocessing import Pool
 from DataBase.Mongo import MongoDb
 from DataBase.Redis import Redis
 from redis.exceptions import RedisError
 from pymongo.errors import PyMongoError
-from pymongo.errors import *
 from ip2Region import Ip2Region
 
 """
@@ -155,7 +154,7 @@ class Reader(Base):
 
 class Writer(Base):
 
-    def start(self):
+    def start(self ,withStatic = False):
         redisRtryTimes = 0
         mongodbRtryTimes = 0
 
@@ -169,7 +168,7 @@ class Writer(Base):
                     print('pid : %s waiting for line data' % os.getpid())
                     continue
 
-                self.lineLogToMongo(line)
+                self.lineLogToMongo(line ,withStatic)
                 # 重试次数归零
                 redisRtryTimes = 0
                 mongodbRtryTimes = 0
@@ -194,7 +193,7 @@ class Writer(Base):
                     exit(0)
 
 
-    def lineLogToMongo(self ,line ):
+    def lineLogToMongo(self ,line,withStatic ):
         #####
         # nginx log format
         #'[$time_local] $host $remote_addr - "$request" '
@@ -205,10 +204,12 @@ class Writer(Base):
         line = line.strip()
         _arr = line.split(' ')
 
-        # filter static file
-        if (re.search(r'\.[js|css|png|jpg|ico|woff]', _arr[6].strip(''))):
-            # print('it`s static request')
-            return
+
+        # filter static file 如果　-static 则　withStatic = True
+        if(withStatic == False):
+            if (re.search(r'\.[js|css|png|jpg|ico|woff]', _arr[6].strip(''))):
+                # print('it`s static request')
+                return
 
         _map = {}
         request_time = _arr[0].strip('').strip('[')
@@ -296,9 +297,9 @@ class Writer(Base):
 def read(logPath):
     Reader(logPath).startTailf()
 
-def write(logFileName):
+def write(logFileName ,withStatic):
 
-    Writer(logFileName).start()
+    Writer(logFileName).start(withStatic)
 
 
 if __name__ == "__main__":
@@ -308,7 +309,6 @@ if __name__ == "__main__":
 
         if ('-m' in sys.argv):
             runModel = sys.argv[ sys.argv.index('-m') + 1 ].strip()
-
             if(runModel not in ['read' ,'write','both']):
                 raise IndexError('未匹配到命令')
         else:
@@ -320,6 +320,10 @@ if __name__ == "__main__":
         else:
             writerProccessNum = 2
 
+        if ('-with-static' in sys.argv):
+            withStatic = True
+        else:
+            withStatic = False
 
         if (path_commond == '-f'):
             logPath = sys.argv[2]
@@ -334,7 +338,7 @@ if __name__ == "__main__":
             poll = Pool(pollNum)
 
             for i in range(pollNum):
-                poll.apply_async(write,args=(logPath,))
+                poll.apply_async(write,args=(logPath,withStatic,))
 
             read(logPath)
 
@@ -351,7 +355,7 @@ if __name__ == "__main__":
             poll = Pool(pollNum)
 
             for i in range(pollNum):
-                poll.apply_async(write,args=(logPath,))
+                poll.apply_async(write,args=(logPath,withStatic,))
 
             poll.close()
             poll.join()
@@ -367,6 +371,7 @@ if __name__ == "__main__":
         print('|    -f  your access.log path  ')
         print('|    -m  run model -m [read | write | both]  ')
         print('|    -p  writer Proccess Number  ')
+        print('|    -with-static  writer Proccess will not filter static file request  ')
         print('| only read log; for example: python3 -u watcher.py -f  /wwwlogs/access.log -m read   ')
         print('| only write log; for example: python3 -u watcher.py -f  /wwwlogs/access.log -m write -p 4   ')
         print('| read and write log; for example: python3 -u watcher.py -f  /wwwlogs/access.log [ -m both -p 2]   ')
