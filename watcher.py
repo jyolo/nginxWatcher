@@ -7,8 +7,39 @@ from pymongo.errors import PyMongoError
 from ip2Region import Ip2Region
 
 """
-python nginxWatcher -f _logpath 
+python 递归超过一定深度就会　栈溢出　
+尾递归的优化
+勿删除　否则长时间　运行会　栈溢出
 """
+
+class TailRecurseException(BaseException):
+    def __init__(self, args, kwargs):
+        self.args = args
+        self.kwargs = kwargs
+def tail_call_optimized(g):
+    """
+    This function decorates a function with tail call
+    optimization. It does this by throwing an exception
+    if it is it's own grandparent, and catching such
+    exceptions to fake the tail call optimization.
+
+    This function fails if the decorated
+    function recurses in a non-tail context.
+    """
+    def func(*args, **kwargs):
+        f = sys._getframe()
+        if f.f_back and f.f_back.f_back and f.f_back.f_back.f_code == f.f_code:
+            raise TailRecurseException(args, kwargs)
+        else:
+            while 1:
+                try:
+                    return g(*args, **kwargs)
+                except TailRecurseException as e:
+                    args = e.args
+                    kwargs = e.kwargs
+    func.__doc__ = g.__doc__
+    return func
+
 
 
 class Base:
@@ -101,6 +132,7 @@ class Base:
 class Reader(Base):
 
 
+    @tail_call_optimized
     def startTailf(self):
 
         with open(self.logPath, newline="\n") as f:
@@ -113,7 +145,7 @@ class Reader(Base):
                     for line in f:
                         emptyTimes = 0
                         flag = (self.getRedis()).lpush(self.listKey, line)
-                        #print(flag)
+                        print('入队成功　%s' % flag)
 
                     """
                     文件没有内容的时候　不进入　for in 中　则　raise StopIteration　错误　
@@ -123,15 +155,14 @@ class Reader(Base):
 
                 except StopIteration as e:
                     emptyTimes = emptyTimes + 1
-                    if (emptyTimes == 1):
-                        continue
 
                     if(emptyTimes >= self.emptyLineMaxTime):
+                        print('empty line %s time' % emptyTimes)
                         time.sleep(1)
                         f.close()
-                        self.startTailf()
+                        print('关闭文件重新读取文件')
+                        return self.startTailf()
                     else:
-
                         time.sleep(0.1)
                         print('empty line %s time' % emptyTimes)
 
@@ -146,10 +177,10 @@ class Reader(Base):
                         print('retry over 100 times proccess exit')
                         exit(0)
 
-                except Exception as e:
-                    # 其它未知错误　直接退出
-                    traceback.print_exc()
-                    exit(0)
+                # except Exception as e:
+                #     # 其它未知错误　直接退出
+                #     traceback.print_exc()
+                #     exit(0)
 
 
 class Writer(Base):
