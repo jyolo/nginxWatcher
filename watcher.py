@@ -163,7 +163,7 @@ class Reader(Base):
                         print('关闭文件重新读取文件')
                         return self.startTailf()
                     else:
-                        time.sleep(0.1)
+                        time.sleep(1)
                         print('empty line %s time' % emptyTimes)
 
 
