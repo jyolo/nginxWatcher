@@ -57,6 +57,7 @@ class Base:
 
 
 
+
         # redis
         self.redis = None
         self.redisDbNum = 3
@@ -188,6 +189,11 @@ class Writer(Base):
     def start(self ,withStatic = False):
         redisRtryTimes = 0
         mongodbRtryTimes = 0
+
+        keyExists = self.getRedis().exists(self.listKey)
+        if (keyExists == 0):
+            raise KeyError('redis key not exists' % self.listKey)
+
 
         while 1:
             try:

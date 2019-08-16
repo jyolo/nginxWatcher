@@ -19,10 +19,16 @@ if __name__ == "__main__":
     #         print('append')
     #         time.sleep(0.1)
 
-    target = 'http://local.test.com'
 
+    interval = 0
     while 1:
+        target1 = 'http://local.test.com/?time=%s' % time.time()
+        target2 = 'http://local.jump.com/?time=%s' % time.time()
 
-        res = request(method='get',url=target)
+        res = request(method='get', url=target1)
+        res = request(method='get', url=target2)
+        # interval = interval + 1
+        # if interval >= 1:
+        #     time.sleep(2)
         print(res)
-        time.sleep(0.1)
+        # time.sleep(1)
