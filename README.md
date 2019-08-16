@@ -26,8 +26,11 @@
 ## 启动脚本 
     
     1：安装依赖包 pip install -r requirements.txt
-    # -u 关闭python 缓冲
-    2：nohup python3 -u watcher.py -f　/alidata/server/nginx/logs/xfb.log > nohup.out  2>&1 &
+    
+    python3 watcher.py -k access_log_80_server -m read -f /wwwlogs/access.log
+    
+    后台挂起　-u 关闭　python 缓冲
+    nohup　python3 -u watcher.py -k access_log_80_server -m read -f /wwwlogs/access.log　> ./log/read.out  2>&1 &
          
     note: watch 对应的日志文件.log  [ 支持多个nginx日志 同时监控 ]
 

@@ -100,8 +100,6 @@ if __name__ == '__main__':
         runner(args)
 
 
-    # cmd = 'nohup python3 -u watcher.py -f %s -m %s > ./Log/%s.out  2>&1 &' % (logPath ,runmodel ,runmodel)
-
 
 
 
