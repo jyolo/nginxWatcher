@@ -1,46 +1,34 @@
-###
+### Nginx 流量监控
 
 
-## 超频请求
-    在日志里 每分钟 的请求次数超过约定的次数 num
-    note: 假设 在 60 秒内 请求超过 20  = 一次超频请求
-
+#### 分布式nginx日志监控
+    可分布式部署到多台服务器上,同时监控多台服务器的nginx流量 
     
-## 超频请求率 该值越高 单位的内请求的次数越多
-    总的请求次数 = 所有请求数 / 60s  （过滤掉静态文件的请求）
-     
-                超频请求次数 
-    超频请求率 = ————————————————
-                总的请求次数 / 60s 
-
-    note: 假设 总的请求次数 为 10  ，其中有5次都超频了  则 超请求率 = 0.50
-
-
-
-## 请求页面相似率  该值越低 页面的重复越高
-    在上面找出的 5次超频请求中 查找出 请求的所有页面的次数 （过滤掉静态文件 + 去掉重复的）
+#### 快速开始
     
-                    在5次超频请求中所有访问要页面的个数
-    请求页面相似率 =  ————————————————————————————————————
-                           总超频请求次数
-    note: 假设在 5次超频请求中 每次的超频的请求 都只访问两2个页面  则 请求页面相似率 0.2
+    配置好　Database 里面的 config.json　相关数据库　默认　redis + monogodb　(暂不支持mysql可自行完善)
+    
+    配置好后就可以直接使用　参数说明  : 
+        -f  access.log path
+        -k  redis list key name  
+        -m  run model -m [read | write]  
+        -p  writer model Proccess Number 
+        -with-static  输出到mongodb的时候是否保留过滤静态文件的请求日志; 默认过滤
+    
+    读取日志示例:
+        python3 watcher.py -k access_log_80_server -m read -f /wwwlogs/access.log
+    
+    输出日志到mongodb:
+        python3 watcher.py -k access_log_80_server  -m write -p 4  [-with-static]
 
-
-## 机器人相似度 该值越高 越似机器人或者爬虫
-
-                    总的 不合格请求页面相似率 次数
-    机器人相似度 =  ————————————————————   
-                    总超频请求次数
-
-    note: 假设在5次超频请求中 每次都是不合格的 页面相似请求率 则 5/5  = 1 那就大概率就是 爬虫或者机器人 
 
 
 ## 启动脚本 
     
     1：安装依赖包 pip install -r requirements.txt
     # -u 关闭python 缓冲
-    2：nohup python3 -u watcher.py -f  /alidata/server/nginx/logs/xfb.log > nohup.out  2>&1 &
-        
+    2：nohup python3 -u watcher.py -f　/alidata/server/nginx/logs/xfb.log > nohup.out  2>&1 &
+         
     note: watch 对应的日志文件.log  [ 支持多个nginx日志 同时监控 ]
 
 ## 停止脚本
