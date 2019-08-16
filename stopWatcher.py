@@ -6,7 +6,7 @@ if __name__ == "__main__":
 
         pids = []
         for i in res:
-            if(i.find('-f') > 0):
+            if(i.find('-u') > 0):
                 print(i)
                 obj = re.search(r'root\s+(\d+)' ,i )
                 pid = obj.groups()[0]

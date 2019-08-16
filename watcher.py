@@ -35,7 +35,6 @@ class runner:
 
 
 
-
 def formCommands(cmdArgs):
     _map = {
         'logPath':None,
@@ -83,7 +82,9 @@ if __name__ == '__main__':
     
     write model example:
         python3 watcher.py -k access_log_80_server  -m write -p 4  [-with-static]
+        
     """
+
     try:
 
         args = formCommands(commond)
@@ -96,10 +97,12 @@ if __name__ == '__main__':
             pool = Pool(poolNum)
             for i in range(poolNum):
                 pool.apply_async(runner, args=(args,))
+
             pool.close()
             pool.join()
 
         else:
+
             runner(args)
 
     except TypeError as e:
@@ -118,6 +121,7 @@ if __name__ == '__main__':
 
     except Exception as e:
         traceback.print_exc()
+
 
 
 
