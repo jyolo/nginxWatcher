@@ -51,7 +51,8 @@ if __name__ == "__main__":
     read_cmd = read_cmd % (key,file, key)
     write_cmd = write_cmd % (key ,key)
 
-    print(read_cmd)
-    print(write_cmd)
-    print(os.popen(read_cmd))
-    print(os.popen(write_cmd))
+    # print(read_cmd)
+    # print(write_cmd)
+    os.popen(read_cmd)
+    os.popen(write_cmd)
+    print('读写服务器已启动')
