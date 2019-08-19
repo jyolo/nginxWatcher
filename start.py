@@ -36,8 +36,10 @@ def formCommands(cmdArgs):
 if __name__ == "__main__":
     args = formCommands(sys.argv)
 
+    # python3 -u start.py -k xfb_80_server -f /www/
+
     read_cmd = 'nohup python3 -u watcher.py -k %s -f %s > ./log/%s_read.out 2>&1 &'
-    write_cmd = 'nohup python3 -u watcher.py -k %s -p 2 -m write > ./log/%s_write.out 2>&1 &'
+    write_cmd = 'nohup python3 -u watcher.py -k %s -p %s -m write > ./log/%s_write.out 2>&1 &'
     # read_cmd = 'python3 -u watcher.py -k %s -f %s > ./log/%s_read.out 2>&1 '
 
     file = key = ''
@@ -48,8 +50,14 @@ if __name__ == "__main__":
     if (args['redisKey'] != None):
         key = args['redisKey']
 
+    if (args['proccessNum'] != None):
+        proccessNum = args['proccessNum']
+    else:
+        proccessNum = 2
+
+
     read_cmd = read_cmd % (key,file, key)
-    write_cmd = write_cmd % (key ,key)
+    write_cmd = write_cmd % (key ,proccessNum,key)
 
     # print(read_cmd)
     # print(write_cmd)

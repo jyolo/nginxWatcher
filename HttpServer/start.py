@@ -1,12 +1,13 @@
 import time,json,sys,os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from DataBase.Mongo import MongoDb
+from flask_socketio import SocketIO
 from flask import Flask ,render_template,request,jsonify,logging
 import multiprocessing
 
 
 app = Flask(__name__)
-
+socketio = SocketIO(app)
 
 
 class analysisa:
@@ -266,8 +267,8 @@ if __name__ == "__main__":
 
     # analysisa().getTop10IpDetail()
     app.debug = False
-    app.run(host='0.0.0.0')
-
+    # app.run(host='0.0.0.0')
+    socketio.run(app)
 
 
 

@@ -33,6 +33,9 @@
     nohup　python3 -u watcher.py -k access_log_80_server -m read -f /wwwlogs/access.log　> ./log/read.out  2>&1 &
          
     note: watch 对应的日志文件.log  [ 支持多个nginx日志 同时监控 ]
+    
+    2:快速读写一起　启动
+    python3 start.py -k tt -p 5 -f /www/wwwlogs/your.log
 
 ## 停止脚本
 
